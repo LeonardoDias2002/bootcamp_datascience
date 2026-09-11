@@ -1,0 +1,167 @@
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f6f8fa; /* Soft off-white background */
+  color: #24292f;
+  line-height: 1.6;
+}
+
+.main_header {
+  background-color: #24292e; 
+  color: #ffffff;
+  padding: 3rem 2rem;
+  text-align: center;
+  border-bottom: 4px solid #0969da; 
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 2.5rem;
+}
+
+.main_header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  letter-spacing: 0.5px;
+}
+
+.main_header h4 {
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: #8b949e; 
+  max-width: 750px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.intro, .data_tools, .exemplos_reais {
+  max-width: 900px;
+  margin: 0 auto 2rem auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+}
+
+  
+  </style>
+  
+</head>
+
+
+
+
+<body>
+<header class = 'main_header'>
+<h1>Aula 2: Git, Github, Data e Kaggle<h1>
+  <h4>Topicos: principios github, metodologias de elaboraçao de projetos, principios de limpeza e visualizaçao de dados</h4>
+</header>
+
+  <div class = 'intro'>
+<h2>GitHub</h2>
+<p>
+GitHub é a plataforma par excelence. Mais utilizado pelo mercado e para a ciência de dados. <br>
+<strong>1. Criar e nomear o repositório</strong> <br>
+<strong>2. Criar Readme.md e Gitiginore</strong> #Dica : criar vários readme.md e gitignore ; criar manualmente, não automático <br>
+<strong>3. Escolha uma licença</strong> <br>
+- Branches: main or develop - código principal ou códigos ainda não integrado ao main. <br>
+EX branches por escala de segurança: 
+  branch bronze - apenas código puro, esperando por avaliação; branch gold - integrada ao banco de dados;<br>
+EX2 branches de funcionalidade: invoices, statistics, mains, etc<br>
+<em>OBS: GITIGNORE - arquivo que faz com que o git ignore aquela pasta/código. Literalmente, git ignore. (ex: gitignore apis, venv, etc); </em> <br>
+</p>
+    <br>
+<h2>Projetos</h2>
+<p>
+Sprints: Ciclos curtos com entregáveis e dailies ou weeklies; <br>
+Metodologia Scrum: definição de papéis e sprints <br>
+Metodologia Kanban: muito comum no mercado. Métas visuais e tarefas 'para fazer' (checklists). Uso do microsolft teams para integração automática <br>
+DataType Overview: explicar tipos de dados utilizados<br>
+Big Data: Volume alto de dados ; Variação dos tipos de dados (estruturada, não e semi) ; Velocidade imensa requerida (3Vs)<br>
+</p>
+  </div>
+  
+  
+  <div class = 'data_tools'>
+<h2>Data</h2> 
+
+<h3>Pré-Processamento</h3>
+<h4>Primeiras medidas</h4>
+<p> 
+Ver cabeçalhos e delimitadores: quais ajustes são necessários? Quais limites são postos? <br>
+Valores ausentes: são considerados ZERO, impossível divisão. Ignorar? Substituir por média? Estimar? <br>
+Valores inconsistentes: ex: ROW[COLUMN ['idade'] == '20 anos' ] vs ROW[COLUMN ['DataNascimento'] == '2023' ] ; dificil resolver <br>
+</p>
+<h4>Data Cleaning</h4>
+<p>
+Limpar duplicatas, elas interferem na análise. Dão mais peso à certos fatores em relação a outros <br>
+Transformar tipos de dados (xml, csv, json? Padronizar os dados). Preparar para estruturá-los. <br>
+Limpar variáveis fictícias (dummy): feitas para testes, muitas vezes esquecidas no modelo. <br>
+</p>
+
+<h3>Exploratory Data Analysis</h3> 
+<h4>O Exame de dados</h4> 
+<p>
+Variável = 1 coluna do cabeçalho <br>
+Examinar tendências da variável: ex ['sexo'] - há mais homens ou mulheres? como se relacionam com outras variáveis? (ex: salário, tempo de permanência, etc) <br>
+Tendências de dispersão <br>
+<h4>Gráficos</h4>
+<p>
+Univariado: apenas uma variável (ex: salário apenas) <br>
+Bivariado: 2 variáveis (ex: salário e sexo) <br>
+Multivariado (múltiplos) <br>
+Abordar suposições e hipóteses e validá-las com a empresa. As tendências que vemos têm paridade com a realidade ou apenas criamos uma máquina de cálculos abstrata? <br>
+REVISAR: entradas duplicadas, dados ausentes, formato de dados, outliers, etc. <br>
+<strong>Outlier:</strong> não excluir de primeira. às vezes, o outlier é a chave do que a empresa deseja. EX: pandemia. Não basta voltar aos dados pré-2020 ; o padrão de consumo pode ter mudado definitivamente ou a tendência de mudança à normalidade pode demorar múltiplos anos. Se for um dado falso, obviamente, retirá-lo.<br>
+<a href = ''>Métodos Estatísticos em Python</a>
+</p>
+<h4>Estatística</h4> 
+<p>
+Correlação (se uma muda, outra muda) ou covariância (mudança entre duas variáveis, mas sem normalização) <br>
+Matrizes de correlação: exibe o coeficiente de correlação de múltiplas variáveis (ex: correlação ['sexo'] , ['salário'], ['número de contratações'], ['gastos semanais'], etc.) <br>
+Coeficiente de correlação: variáveis são importantes ou não? ex: variável sem correlação com nenhuma outra talvez devam ser retiradas. Ex: ['cor favorita']. Analisar o comportamento das variáveis. <br>
+</p>
+
+<h3> Data Visualization</h3>
+<h4>Início</h4> 
+<p>
+Pensar desde o início. Ex: design ajuda o grupo ou confunde? <br>
+Tipos de dados vs gráfico correto: qual escolher? <br>
+<a href = ' '>Exemplos gráficos</a> <br>
+<a href = 'https://www.data-to-viz.com'>Sites tipos de gráficos para cada dado (possível baixar código R e Python)</a> <br>
+Coeficiente de correlação: variáveis são importantes ou não? ex: variável sem correlação com nenhuma outra talvez devam ser retiradas. Ex: ['cor favorita']. Analisar o comportamento das variáveis. <br>
+</div>
+  
+  <div class = 'exemplos_reais'>
+  <h2>Exemplos de Dados para Data Science: O Kagle</h2> <br>
+  <a href='https://www.kaggle.com'>DataSets para usar</a> <br>
+  <h3>Dados Reais do Titanic</h3>
+  <a href='https://www.kaggle.com/datasets/shuofxz/titanic-machine-learning-from-disaster'>DataSets para titanic</a> <br>
+  <p>
+    Dados Faltantes: 3.000 + embarcaram; registro de apenas 891 na Database; valores em branco. <br>
+    Importar: Matplotlib, Pandas, Numpy e Seaborn. [<a href=''>Aula de importaçao de modulos</a>] <br>
+    - <a href = ''>Exemplo de Codigo para aprendizado</a> <br>
+    Explorar por coluna: nome da coluna x contagem de nulos x datatype - <strong>pandas.info()</strong> [ver no exemplo de codigo, topico 3] <br>
+    Quartil: conjunto de dados/4 partes ; ate 25% dos valores max = valores max/4 ; ate 50%, valores max/2 ; etc <br>
+    Contar quantos passageiros sobreviveram e utilizar sobrevivencia como elemento comparativo (sobrevivencia x sexo x classe x cabine)<br>
+    Graficos: utilizar [<a href = ''>Seaborn</a>] e [<a href = ''>matplotlib</a>]. Importa-los. <br>
+    BlockSpot: tipo de grafico muito utilizado para data science. Visualizaçao de outliers clara. <br>
+    Tecnica para completar os faltantes: mediana. Problema: valores podem nao ser congruentes. <br>
+    Tentar nao inserir numeros em instancias de texto diretamente, porque '1', '2' e '3' nao se tornam meras representaçoes, mas valores [passiveis de <, >, =]. Soluçao: funçao encode. <br>
+    Converter todos os artigos (pdf, IMG, etc) em ND. ND representa a linguagem da maquina. Ao transformar o arquivo em nd, encurtamos o processo e economizmos tokens<br>
+    Nao esquecer de salvar todos os graficos para csv [PLACEHOLDER_FOR_VAR.to_csv('PLACEHOLDER_FOR_NAME', index = False)]<br>
+    Algoritimo: codigo ; modelo = entradas, algoritimos, ajustes e saidas, 100%. <br>
+    </div>
+ 
+  </p> 
+    <p>AINDA NAO ESTA PRONTO! FALTA: LINKS, FORMATAÇAO, MELHOR CSS</p>    
+</body>
+</p>
+  </html>

@@ -1,0 +1,77 @@
+Codigo,Acao,Tipo,Qtde. Teorica,Part. (%),Setor,sub_setor
+ALOS3,ALLOS,ON ED NM,478975645,0.54,Financeiro,Exploracao de Imoveis e Shoppings
+ABEV3,AMBEV S/A,ON EJ,4043349180,2.375,Consumo nao Ciclico,Bebidas
+ASAI3,ASSAI,ON NM,1335651252,0.528,Consumo nao Ciclico,Comercio de Alimentos
+AURE3,AUREN,ON NM,317886569,0.153,Utilidade Publica,Energia Eletrica
+AXIA3,AXIA ENERGIA,ON NM,2278697967,4.843,Utilidade Publica,Energia Eletrica
+AZZA3,AZZAS 2154,ON NM,130746665,0.075,Consumo Ciclico,Tecidos Vestuario e Calcados
+B3SA3,B3,ON EJ NM,4985893391,3.453,Financeiro,Servicos Financeiros Diversos
+BBSE3,BBSEGURIDADE,ON NM,616248544,0.919,Financeiro,Seguros e Previdencia
+BBDC3,BRADESCO,ON N1,1464434502,0.897,Financeiro,Bancos
+BBDC4,BRADESCO,PN N1,5100907585,3.531,Financeiro,Bancos
+BRAP4,BRADESPAR,PN N1,250886751,0.198,Materiais Basicos,Mineracao
+BBAS3,BRASIL,ON NM,2842760965,2.42,Financeiro,Bancos
+BRAV3,BRAVA,ON NM,277531689,0.188,Petroleo Gas e Biocombustiveis,Petroleo Gas e Biocombustiveis
+BPAC11,BTGP BANCO,UNT N2,1194770950,2.92,Financeiro,Bancos
+CXSE3,CAIXA SEGURI,ON NM,600000000,0.463,Financeiro,Seguros e Previdencia
+CEAB3,CEA MODAS,ON NM,204244409,0.073,Consumo Ciclico,Comercio
+CMIG4,CEMIG,PN EJ N1,1823593065,0.772,Utilidade Publica,Energia Eletrica
+COGN3,COGNA ON,ON NM,1918999490,0.169,Consumo Ciclico,Cursos e Educacao
+CSMG3,COPASA,ON EJ NM,379172627,0.823,Utilidade Publica,agua e Saneamento
+CPLE3,COPEL,ON NM,2969578102,1.801,Utilidade Publica,Energia Eletrica
+CSAN3,COSAN,ON NM,2278224258,0.34,Petroleo Gas e Biocombustiveis,Exploracao Refino e Distribuicao
+CPFE3,CPFL ENERGIA,ON NM,187732538,0.325,Utilidade Publica,Energia Eletrica
+CMIN3,CSNMINERACAO,ON N2,1572292846,0.308,Materiais Basicos,Mineracao
+CURY3,CURY S/A,ON NM,160988231,0.169,Consumo Ciclico,Construcao Civil
+CYRE3,CYRELA REALT,ON NM,256078095,0.262,Consumo Ciclico,Incorporacoes
+DIRR3,DIRECIONAL,ON NM,326739860,0.124,Consumo Ciclico,Construcao Civil
+EMBJ3,EMBRAER,ON EJ NM,711833141,2.683,Bens Industriais,Material de Transporte
+ENGI11,ENERGISA,UNT N2,358085210,0.717,Utilidade Publica,Energia Eletrica
+ENEV3,ENEVA,ON NM,1916508073,2.044,Utilidade Publica,Energia Eletrica
+EGIE3,ENGIE BRASIL,ON NM,443076690,0.499,Utilidade Publica,Energia Eletrica
+EQTL3,EQUATORIAL,ON NM,1245905097,1.913,Utilidade Publica,Energia Eletrica
+FLRY3,FLEURY,ON NM,445241785,0.376,Saude,Servicos Medicos e Analises
+GGBR4,GERDAU,PN N1,1244099630,1.206,Materiais Basicos,Siderurgia e Metalurgia
+GOAU4,GERDAU MET,PN N1,827170367,0.36,Materiais Basicos,Siderurgia e Metalurgia
+HAPV3,HAPVIDA,ON NM,276640336,0.071,Saude,Servicos Medicos e Analises
+HYPE3,HYPERA,ON NM,296007718,0.277,Saude,Medicamentos e Produtos Farmaceuticos
+IGTI11,IGUATEMI S.A,UNT N1,220429690,0.227,Financeiro,Exploracao de Imoveis e Shoppings
+ISAE4,ISA ENERGIA,PN N1,460013216,0.478,Utilidade Publica,Energia Eletrica
+ITSA4,ITAUSA,PN N1,5980171123,3.237,Financeiro,Holdings Financeiras
+ITUB4,ITAUUNIBANCO,PN N1,5337898685,8.684,Financeiro,Bancos
+KLBN11,KLABIN S/A,UNT N2,786869850,0.564,Materiais Basicos,Papel e Celulose
+RENT3,LOCALIZA,ON NM,976910862,1.431,Consumo Ciclico,Aluguel de Carros
+LREN3,LOJAS RENNER,ON EJ NM,975958589,0.419,Consumo Ciclico,Tecidos Vestuario e Calcados
+MGLU3,MAGAZ LUIZA,ON NM,389237948,0.091,Consumo Ciclico,Comercio Varejista
+POMO4,MARCOPOLO,PN N2,728945103,0.116,Bens Industriais,Material de Transporte
+MBRF3,MARFRIG,ON NM,735470942,0.479,Consumo nao Ciclico,Alimentos Processados
+BEEF3,MINERVA,ON NM,444534706,0.069,Consumo nao Ciclico,Alimentos Processados
+MOTV3,MOTIVA SA,ON NM,1002045228,0.634,Bens Industriais,Transporte
+MRVE3,MRV,ON NM,374720028,0.075,Consumo Ciclico,Incorporacoes
+MULT3,MULTIPLAN,ON N2,322143505,0.389,Financeiro,Exploracao de Imoveis
+NATU3,NATURA,ON NM,837026185,0.246,Consumo nao Ciclico,Produtos de Uso Pessoal e de Limpeza
+PETR3,PETROBRAS,ON N2,2441951100,5.118,Petroleo Gas e Biocombustiveis,Petroleo Gas e Biocombustiveis
+PETR4,PETROBRAS,PN N2,4410957710,8.4,Petroleo Gas e Biocombustiveis,Petroleo Gas e Biocombustiveis
+PSSA3,PORTO SEGURO,ON EJ NM,178825403,0.327,Financeiro,Previdencia e Seguros
+PRIO3,PRIO,ON NM,753702456,1.761,Petroleo Gas e Biocombustiveis,Petroleo Gas e Biocombustiveis
+RADL3,RAIADROGASIL,ON NM,1312816783,0.983,Saude,Comercio e Distribuicao
+RDOR3,REDE D OR,ON NM,1030028001,1.507,Saude,Servicos Medico-Hospitalares
+RAIL3,RUMO S.A.,ON NM,1406822230,0.858,Bens Industriais,Transporte e Logistica
+SBSP3,SABESP,ON NM,3524534025,3.625,Utilidade Publica,agua e Saneamento
+SANB11,SANTANDER BR,UNT,356245448,0.403,Financeiro,Bancos
+CSNA3,SID NACIONAL,ON,727462410,0.169,Materiais Basicos,Siderurgia e Metalurgia
+SMFT3,SMART FIT,ON NM,555416717,0.363,Consumo Ciclico,Viagens e Lazer
+SUZB3,SUZANO S.A.,ON NM,608216821,1.109,Materiais Basicos,Papel e Celulose
+TAEE11,TAESA,UNT N2,218568234,0.346,Utilidade Publica,Energia Eletrica
+VIVT3,TELEF BRASIL,ON,707098992,0.818,Comunicacoes,Telecomunicacoes
+TEND3,TENDA,ON NM,118671153,0.124,Consumo Ciclico,Construcao Civil
+TIMS3,TIM,ON EJ NM,776308601,0.556,Comunicacoes,Telecomunicacoes
+TOTS3,TOTVS,ON EJ NM,515889217,0.702,Tecnologia da Informacao,Programas e Servicos
+UGPA3,ULTRAPAR,ON NM,1067930953,1.629,Petroleo Gas e Biocombustiveis,Distribuicao e Comercializacao
+USIM5,USIMINAS,PNA N1,518248757,0.14,Materiais Basicos,Siderurgia e Metalurgia
+VALE3,VALE,ON NM,3687404862,10.12,Materiais Basicos,Mineracao
+VAMO3,VAMOS,ON NM,527021942,0.077,Bens Industriais,Transportes
+VBBR3,VIBRA,ON EJ NM,1194079963,1.832,Petroleo Gas e Biocombustiveis,Petroleo Gas e Biocombustiveis
+VIVA3,VIVARA S.A.,ON NM,123861677,0.106,Consumo Ciclico,Comercio
+WEGE3,WEG,ON EJ NM,1460506056,2.869,Bens Industriais,Maquinas e Equipamentos
+YDUQ3,YDUQS PART,ON NM,247852006,0.104,Consumo Ciclico,Cursos e Educacao

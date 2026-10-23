@@ -22,7 +22,7 @@ st.set_page_config(
 # Paleta oficial extraída da Apresentação 1 e do Notebook do Grupo
 CORES = {
     "sp100": "#0F4C81",  # Azul Marinho Principal (S&P 100)
-    "sp100_sec": "#2B6999",  # Azul Secundário (Apresentação 1)
+    "sp100_sec": "#2B6999",  # Azul Secundário
     "ibov": "#1B4D3E",  # Verde Esmeralda Fechado (IBOVESPA)
     "ibov_sec": "#2E7D67",  # Verde Secundário
     "alerta": "#C53030",  # Vermelho Destaque / Alerta
@@ -36,108 +36,50 @@ CORES = {
 st.markdown(
     """
 <style>
-    /* 1. Sobrescreve as variáveis globais de tema do Streamlit para forçar Light Mode real */
+    /* Força esquema claro nos componentes nativos e fundo branco limpo */
     :root, .stApp, [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {
-        --text-color: #1E293B !important;
-        --background-color: #FFFFFF !important;
-        --secondary-background-color: #F8FAFC !important;
-        --primary-color: #0F4C81 !important;
         color-scheme: light !important;
     }
-
     .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
         background-color: #FFFFFF !important;
-        color: #1E293B !important;
+        color: #1A202C !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
     }
 
-    /* 2. Sidebar e Inputs (Data de Corte e Selectbox com fundo claro e letra escura) */
+    /* Sidebar */
     [data-testid="stSidebar"] {
         background-color: #F8FAFC !important;
         border-right: 1px solid #E2E8F0 !important;
     }
-    [data-testid="stSidebar"] p,
-    [data-testid="stSidebar"] span,
-    [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] h1,
-    [data-testid="stSidebar"] h2,
-    [data-testid="stSidebar"] h3 {
+    [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label {
         color: #1E293B !important;
     }
 
-    /* Caixa do DateInput (Data de Corte) e Selectbox (Período de Avaliação) */
-    [data-testid="stDateInput"] div[data-baseweb="input"],
-    [data-testid="stDateInput"] div[data-baseweb="base-input"],
-    [data-testid="stDateInput"] input {
-        background-color: #FFFFFF !important;
-        color: #0F172A !important;
-        -webkit-text-fill-color: #0F172A !important;
-        font-weight: 600 !important;
-        border-color: #CBD5E1 !important;
-    }
-    div[data-baseweb="select"] > div {
-        background-color: #FFFFFF !important;
-        color: #0F172A !important;
-        border: 1px solid #CBD5E1 !important;
-        font-weight: 500 !important;
-    }
-    div[data-baseweb="select"] span,
-    div[data-baseweb="select"] div,
-    div[data-baseweb="select"] input {
-        color: #0F172A !important;
-        -webkit-text-fill-color: #0F172A !important;
-    }
-    /* Menu suspenso (Dropdown Popover) quando aberto */
-    div[data-baseweb="popover"] ul,
-    div[data-baseweb="popover"] li,
-    div[role="listbox"] ul,
-    div[role="listbox"] li {
-        background-color: #FFFFFF !important;
-        color: #0F172A !important;
-    }
-    /* Tags dentro do Multiselect */
-    span[data-baseweb="tag"] {
-        background-color: #0F4C81 !important;
-        color: #FFFFFF !important;
-    }
-    span[data-baseweb="tag"] span {
-        color: #FFFFFF !important;
-        -webkit-text-fill-color: #FFFFFF !important;
-    }
-
-    /* 3. Abas (st.tabs) com contraste nítido em todas as abas (ativas e inativas) */
-    div[data-testid="stTabs"] button[data-baseweb="tab"],
-    div[data-baseweb="tab-list"] button {
-        background-color: #F8FAFC !important;
+    /* Correção de Contraste das Abas (Tabs) */
+    div[data-testid="stTabs"] button[data-baseweb="tab"] {
+        background-color: #F1F5F9 !important;
         border: 1px solid #E2E8F0 !important;
         border-bottom: 2px solid #CBD5E1 !important;
         border-radius: 6px 6px 0 0 !important;
-        margin-right: 6px !important;
+        margin-right: 4px !important;
         padding: 10px 18px !important;
-        opacity: 1 !important;
     }
-    div[data-testid="stTabs"] button[data-baseweb="tab"] *,
-    div[data-baseweb="tab-list"] button * {
-        color: #334155 !important;
-        -webkit-text-fill-color: #334155 !important;
+    div[data-testid="stTabs"] button[data-baseweb="tab"] p {
+        color: #1A202C !important; /* Texto escuro bem legível */
         font-weight: 600 !important;
-        font-size: 0.94rem !important;
-        opacity: 1 !important;
+        font-size: 0.95rem !important;
     }
-    div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"],
-    div[data-baseweb="tab-list"] button[aria-selected="true"] {
+    div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
         background-color: #FFFFFF !important;
         border-color: #CBD5E1 !important;
-        border-bottom: 3px solid #0F4C81 !important;
+        border-bottom: 3px solid #0F4C81 !important; /* Destaque da aba selecionada */
     }
-    div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] *,
-    div[data-baseweb="tab-list"] button[aria-selected="true"] * {
+    div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] p {
         color: #0F4C81 !important;
-        -webkit-text-fill-color: #0F4C81 !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
     }
 
-    /* 4. Cabeçalho no estilo da Apresentação 1 */
+    /* Cabeçalho no estilo da Apresentação 1 */
     .finor-tag {
         font-size: 0.82rem;
         font-weight: 700;
@@ -173,7 +115,7 @@ st.markdown(
         margin-bottom: 0.75rem;
     }
 
-    /* 5. Cards de KPI customizados em HTML (100% legíveis em qualquer tema) */
+    /* Cards de KPI customizados em HTML (100% legíveis em qualquer tema) */
     .kpi-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -217,7 +159,7 @@ st.markdown(
         color: #1E293B !important;
     }
 
-    /* 6. Tabela Comparativa HTML limpa */
+    /* Tabela Comparativa HTML limpa */
     .finor-table-container {
         overflow-x: auto;
         margin-top: 0.5rem;
@@ -471,7 +413,7 @@ def executar_familia_modelos(
         lambda_vol=lambda_vol * 0.5,
     )
 
-    # 6. Clustering Hierárquico de Correlação + Representantes SLSQP (Com cópia gravável)
+    # 6. Clustering Hierárquico de Correlação + Representantes SLSQP
     corr = treino_X.corr().clip(-1.0, 1.0)
     dist = np.sqrt(0.5 * (1.0 - corr))
     dist_matrix = dist.to_numpy(copy=True)
@@ -610,46 +552,33 @@ lambda_vol_val = st.sidebar.slider(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### >>>>> DIVISÃO TEMPORAL")
-ret_acoes_full, ret_idx_full, setores_map = carregar_mercado(mercado_sel, "2024-12-31")
-min_d, max_d = ret_acoes_full.index.min().date(), ret_acoes_full.index.max().date()
 
-default_corte = (
-    pd.to_datetime("2025-01-01").date()
-    if min_d < pd.to_datetime("2024-06-01").date()
-    else pd.to_datetime("2025-06-01").date()
-)
-data_corte = st.sidebar.date_input(
-    "Data de Corte (Fim do Treino)",
-    value=default_corte,
-    min_value=min_d,
-    max_value=max_d,
+# Definição Fixa da Data de Corte e Seleção Fora da Amostra (Sem leakage)
+DATA_CORTE_TREINO = "2024-12-31"
+
+ret_acoes_full, ret_idx_full, setores_map = carregar_mercado(
+    mercado_sel, DATA_CORTE_TREINO
 )
 
-janela_aval = st.sidebar.selectbox(
-    "Período de Avaliação Exibido",
-    ["Fora da Amostra (Out-of-Sample)", "Dentro da Amostra (Treino In-Sample)"],
-)
+treino_X = ret_acoes_full.loc[:DATA_CORTE_TREINO]
+treino_y = ret_idx_full.loc[:DATA_CORTE_TREINO]
 
-# Recarregar respeitando exatamente o corte de treino escolhido
-ret_acoes, ret_idx, setores_map = carregar_mercado(mercado_sel, str(data_corte))
-treino_X = ret_acoes.loc[: str(data_corte)]
-treino_y = ret_idx.loc[: str(data_corte)]
 oos_X = (
-    ret_acoes.loc[str(data_corte) :].iloc[1:]
-    if len(ret_acoes.loc[str(data_corte) :]) > 1
-    else ret_acoes.loc[str(data_corte) :]
+    ret_acoes_full.loc[DATA_CORTE_TREINO:].iloc[1:]
+    if len(ret_acoes_full.loc[DATA_CORTE_TREINO:]) > 1
+    else ret_acoes_full.loc[DATA_CORTE_TREINO:]
 )
-oos_y = ret_idx.loc[oos_X.index]
+oos_y = ret_idx_full.loc[oos_X.index]
 
-aval_X = oos_X if "Fora" in janela_aval else treino_X
-aval_y = oos_y if "Fora" in janela_aval else treino_y
+# Sempre avalia fora da amostra (Out-of-Sample)
+aval_X = oos_X
+aval_y = oos_y
 
 carteiras, feats_treino = executar_familia_modelos(
     treino_X, treino_y, setores_map, k_val, peso_max_val, lambda_vol_val
 )
 
-# Cálculo de KPIs na janela selecionada e no treino
+# Cálculo de KPIs
 lista_kpis_aval, series_ret_aval = [], {}
 lista_kpis_treino = []
 
@@ -686,7 +615,7 @@ st.markdown(
 )
 st.markdown(
     f'<div class="finor-subtitle">Comparação de 6 famílias de algoritmos para replicar o índice com <b>K = {k_val} ações</b> '
-    f'(de {ret_acoes.shape[1]} válidas). Período analisado ({janela_aval}): <b>{aval_X.index[0].strftime("%d/%m/%Y")} a '
+    f'(de {ret_acoes_full.shape[1]} válidas). Período analisado (Fora da Amostra): <b>{aval_X.index[0].strftime("%d/%m/%Y")} a '
     f'{aval_X.index[-1].strftime("%d/%m/%Y")}</b> ({len(aval_X)} pregões).</div>',
     unsafe_allow_html=True,
 )
@@ -1134,7 +1063,8 @@ with tab4:
         )
         s_set_univ = (
             pd.Series(
-                1.0, index=[setores_map.get(t, "Outros") for t in ret_acoes.columns]
+                1.0,
+                index=[setores_map.get(t, "Outros") for t in ret_acoes_full.columns],
             )
             .groupby(level=0)
             .sum()

@@ -157,7 +157,10 @@ def build_feature_engineering_pipeline(
     return features.fillna(0)
 
 def avaliar_modelo(pesos: pd.Series, ret_acoes: pd.DataFrame, ret_indice: pd.Series, nome: str = 'modelo') -> pd.Series:
-    w_active = pesos[pesos > 1e-6]
+    # Filtra apenas ativos presentes na matriz de retornos atual
+    valid_active_tickers = [t for t in pesos[pesos > 1e-6].index if t in ret_acoes.columns]
+    w_active = pesos.loc[valid_active_tickers]
+    
     if len(w_active) == 0:
         return pd.Series({
             'N ações': 0, 'Tracking Error (% a.a.)': 0.0, 'Tracking Diff. acumulada (%)': 0.0,
@@ -165,6 +168,8 @@ def avaliar_modelo(pesos: pd.Series, ret_acoes: pd.DataFrame, ret_indice: pd.Ser
             'HHI': 0.0, 'Peso máx. (%)': 0.0
         }, name=nome)
         
+    # Re-normaliza se necessário
+    w_active = w_active / w_active.sum()
     r_cart = ret_acoes[w_active.index] @ w_active
     dif = r_cart - ret_indice
     
@@ -270,7 +275,7 @@ def optimize_miqp_gurobi(ret_acoes: pd.DataFrame, ret_indice: pd.Series, k_max: 
         if model.SolCount > 0:
             weights = pd.Series([w[i].X for i in range(N)], index=tickers)
             return weights / weights.sum()
-    except Exception as e:
+    except Exception:
         pass
     
     top_corr = ret_acoes.corrwith(ret_indice).abs().sort_values(ascending=False).head(k_max).index
@@ -319,7 +324,7 @@ train_idx_opt = idx_df.loc['2022-01-01':'2023-12-31'] if preset_period != "Trein
 features_df = build_feature_engineering_pipeline(train_assets_opt, train_idx_opt, meta_df)
 
 @st.cache_data(show_spinner="Executando otimizadores de portfólio...")
-def run_all_optimizations(_train_assets, _train_idx, _features_df, k):
+def run_all_optimizations(_train_assets, _train_idx, _features_df, k, dataset_tag: str):
     acoes_cl = selecionar_por_cluster(_train_assets, _features_df, k=k)
     
     weights = {
@@ -331,7 +336,7 @@ def run_all_optimizations(_train_assets, _train_idx, _features_df, k):
     }
     return weights
 
-weights_dict = run_all_optimizations(train_assets_opt, train_idx_opt, features_df, k_target)
+weights_dict = run_all_optimizations(train_assets_opt, train_idx_opt, features_df, k_target, dataset_tag=index_choice)
 
 # ==============================================================================
 # ÁREA PRINCIPAL DO DASHBOARD
@@ -361,7 +366,14 @@ col4.metric("📊 R²", f"{best_r2:.4f}")
 
 st.markdown("---")
 
-st.subheader("📋 Tabela Comparativa de Desempenho (Out-of-Sample)")
+if preset_period == "Treino (2022-2023)":
+    sample_label = "In-Sample / Treino"
+elif preset_period in ["Validação (2024-2025)", "Teste (2026)"]:
+    sample_label = "Out-of-Sample"
+else:
+    sample_label = "Período Personalizado"
+
+st.subheader(f"📋 Tabela Comparativa de Desempenho ({sample_label})")
 st.dataframe(df_metrics.style.highlight_min(subset=['Tracking Error (% a.a.)'], color='lightgreen').format({
     'Tracking Error (% a.a.)': '{:.2f}%',
     'Tracking Diff. acumulada (%)': '{:.2f}%',
@@ -377,7 +389,7 @@ st.dataframe(df_metrics.style.highlight_min(subset=['Tracking Error (% a.a.)'], 
 st.subheader("📉 Curva Trade-Off: Tracking Error × Número de Ações (K)")
 
 @st.cache_data(show_spinner="Calculando curva TE vs K para TODOS os modelos...")
-def compute_te_vs_k_all_models(_train_assets, _train_idx, _eval_assets, _eval_idx, _meta_df):
+def compute_te_vs_k_all_models(_train_assets, _train_idx, _eval_assets, _eval_idx, _meta_df, dataset_tag: str):
     k_range = [5, 10, 15, 20, 25, 30, 35, 40]
     te_records = []
     
@@ -401,7 +413,7 @@ def compute_te_vs_k_all_models(_train_assets, _train_idx, _eval_assets, _eval_id
         te_records.append(rec)
     return pd.DataFrame(te_records)
 
-df_te_k_all = compute_te_vs_k_all_models(train_assets_opt, train_idx_opt, eval_assets, eval_idx, meta_df)
+df_te_k_all = compute_te_vs_k_all_models(train_assets_opt, train_idx_opt, eval_assets, eval_idx, meta_df, dataset_tag=index_choice)
 
 models_to_plot = st.multiselect(
     "Selecione os modelos para comparar na curva TE × K:",
@@ -432,9 +444,12 @@ cum_returns_df['Benchmark Index'] = (1 + eval_idx).cumprod() - 1
 
 for m_name in selected_models_chart:
     w_m = weights_dict[m_name]
-    w_m_act = w_m[w_m > 1e-6]
-    r_cart_m = eval_assets[w_m_act.index] @ w_m_act
-    cum_returns_df[m_name] = (1 + r_cart_m).cumprod() - 1
+    valid_tickers_m = [t for t in w_m[w_m > 1e-6].index if t in eval_assets.columns]
+    w_m_act = w_m.loc[valid_tickers_m]
+    if len(w_m_act) > 0:
+        w_m_act = w_m_act / w_m_act.sum()
+        r_cart_m = eval_assets[w_m_act.index] @ w_m_act
+        cum_returns_df[m_name] = (1 + r_cart_m).cumprod() - 1
 
 fig_cum = px.line(
     cum_returns_df * 100,
@@ -450,7 +465,11 @@ st.subheader("📊 Alocação de Ativos e Distribuição Setorial")
 selected_model_alloc = st.selectbox("Selecione o Modelo para Visualizar a Carteira", options=list(weights_dict.keys()), index=4)
 
 w_selected = weights_dict[selected_model_alloc]
-w_active_selected = w_selected[w_selected > 1e-6].sort_values(ascending=False)
+valid_tickers_sel = [t for t in w_selected[w_selected > 1e-6].index if t in eval_assets.columns]
+w_active_selected = w_selected.loc[valid_tickers_sel].sort_values(ascending=False)
+
+if len(w_active_selected) > 0:
+    w_active_selected = w_active_selected / w_active_selected.sum()
 
 df_alloc = pd.DataFrame({
     'Ticker': w_active_selected.index,
@@ -484,15 +503,17 @@ with col_alloc2:
     st.plotly_chart(fig_pie, use_container_width=True)
 
 # ==============================================================================
-# EXPORTAÇÃO DE RELATÓRIO COMPLETO (CSV E PDF/HTML COM CARTEIRA DO MELHOR MODELO)
+# EXPORTAÇÃO DE RELATÓRIO COMPLETO
 # ==============================================================================
 
 st.markdown("---")
 st.subheader("📥 Exportação de Resultados e Relatório Completo")
 
-# Identificar a carteira do melhor modelo para incluir no relatório
 best_w = weights_dict[best_model_name]
-best_w_act = best_w[best_w > 1e-6].sort_values(ascending=False)
+valid_tickers_best = [t for t in best_w[best_w > 1e-6].index if t in eval_assets.columns]
+best_w_act = best_w.loc[valid_tickers_best].sort_values(ascending=False)
+if len(best_w_act) > 0:
+    best_w_act = best_w_act / best_w_act.sum()
 
 df_best_portfolio = pd.DataFrame({
     'Ticker': best_w_act.index,

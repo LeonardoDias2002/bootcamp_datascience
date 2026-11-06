@@ -2,7 +2,7 @@ import os
 import warnings
 from typing import Dict, List, Optional, Tuple
 
-warnings.filterwarnings("ignore")
+warnings.filterwarnings('ignore')
 
 import numpy as np
 import pandas as pd
@@ -16,211 +16,211 @@ from sklearn.linear_model import Lasso
 # 1. CONFIGURAÇÃO DA PÁGINA E ESTILO VISUAL (NYT EDITORIAL + PALETA FINOR)
 # ==============================================================================
 st.set_page_config(
-    page_title="Index Tracking: S&P 100 & IBOVESPA",
-    layout="wide",
-    initial_sidebar_state="expanded",
+    page_title='Index Tracking: S&P 100 & IBOVESPA',
+    layout='wide',
+    initial_sidebar_state='expanded',
 )
 
 CORES: Dict[str, str] = {
-    "sp100": "#0F4C81",  # Azul Marinho Principal (S&P 100)
-    "sp100_sec": "#2B6999",  # Azul Secundário
-    "ibov": "#1B4D3E",  # Verde Esmeralda Fechado (IBOVESPA)
-    "ibov_sec": "#2E7D67",  # Verde Secundário
-    "alerta": "#C53030",  # Vermelho Destaque / Alerta
-    "laranja": "#D97706",  # Âmbar Sóbrio
-    "roxo": "#4C51BF",  # Indigo Sóbrio
-    "neutro": "#88837D",  # Cinza Histórico / Baseline
-    "grafite": "#1A202C",  # Preto/Grafite (Benchmark)
+    'sp100': '#0F4C81',  # Azul Marinho Principal (S&P 100)
+    'sp100_sec': '#2B6999',  # Azul Secundário
+    'ibov': '#1B4D3E',  # Verde Esmeralda Fechado (IBOVESPA)
+    'ibov_sec': '#2E7D67',  # Verde Secundário
+    'alerta': '#C53030',  # Vermelho Destaque / Alerta
+    'laranja': '#D97706',  # Âmbar Sóbrio
+    'roxo': '#4C51BF',  # Indigo Sóbrio
+    'neutro': '#88837D',  # Cinza Histórico / Baseline
+    'grafite': '#1A202C',  # Preto/Grafite (Benchmark)
 }
 
 DOMINIOS_SP100: Dict[str, str] = {
-    "AAPL": "apple.com",
-    "MSFT": "microsoft.com",
-    "NVDA": "nvidia.com",
-    "AMZN": "amazon.com",
-    "GOOG": "abc.xyz",
-    "GOOGL": "abc.xyz",
-    "META": "meta.com",
-    "BRK-B": "berkshirehathaway.com",
-    "LLY": "lilly.com",
-    "AVGO": "broadcom.com",
-    "JPM": "jpmorganchase.com",
-    "TSLA": "tesla.com",
-    "WMT": "walmart.com",
-    "V": "visa.com",
-    "XOM": "exxonmobil.com",
-    "UNH": "unitedhealthgroup.com",
-    "MA": "mastercard.com",
-    "PG": "pg.com",
-    "COST": "costco.com",
-    "JNJ": "jnj.com",
-    "ORCL": "oracle.com",
-    "HD": "homedepot.com",
-    "BAC": "bankofamerica.com",
-    "ABBV": "abbvie.com",
-    "KO": "coca-colacompany.com",
-    "NFLX": "netflix.com",
-    "MRK": "merck.com",
-    "CVX": "chevron.com",
-    "CRM": "salesforce.com",
-    "AMD": "amd.com",
-    "PEP": "pepsico.com",
-    "TMO": "thermofisher.com",
-    "LIN": "linde.com",
-    "TMUS": "t-mobile.com",
-    "WFC": "wellsfargo.com",
-    "ADBE": "adobe.com",
-    "CSCO": "cisco.com",
-    "MCD": "mcdonalds.com",
-    "ABT": "abbott.com",
-    "PM": "pmi.com",
-    "NOW": "servicenow.com",
-    "IBM": "ibm.com",
-    "AXP": "americanexpress.com",
-    "MS": "morganstanley.com",
-    "GE": "ge.com",
-    "CAT": "caterpillar.com",
-    "ISRG": "intuitive.com",
-    "TXN": "ti.com",
-    "GS": "goldmansachs.com",
-    "INTU": "intuit.com",
-    "VZ": "verizon.com",
-    "DIS": "thewaltdisneycompany.com",
-    "AMGN": "amgen.com",
-    "QCOM": "qualcomm.com",
-    "BKNG": "bookingholdings.com",
-    "PF": "pfizer.com",
-    "PFE": "pfizer.com",
-    "T": "att.com",
-    "BLK": "blackrock.com",
-    "RTX": "rtx.com",
-    "NEE": "nexteraenergy.com",
-    "CMCSA": "corporate.comcast.com",
-    "DHR": "danaher.com",
-    "UBER": "uber.com",
-    "SPGI": "spglobal.com",
-    "LOW": "lowes.com",
-    "UNP": "up.com",
-    "LMT": "lockheedmartin.com",
-    "HON": "honeywell.com",
-    "COP": "conocophillips.com",
-    "PLTR": "palantir.com",
-    "SYK": "stryker.com",
-    "SCHW": "schwab.com",
-    "AMAT": "appliedmaterials.com",
-    "LRCX": "lamresearch.com",
-    "MU": "micron.com",
-    "ANET": "arista.com",
-    "PANW": "paloaltonetworks.com",
-    "DELL": "dell.com",
-    "C": "citigroup.com",
-    "BA": "boeing.com",
-    "GILD": "gilead.com",
-    "MDT": "medtronic.com",
-    "DE": "deere.com",
-    "UPS": "ups.com",
-    "SBUX": "starbucks.com",
-    "MDLZ": "mondelezinternational.com",
-    "BMY": "bms.com",
-    "SO": "southerncompany.com",
-    "DUK": "duke-energy.com",
-    "MO": "altria.com",
-    "CVS": "cvshealth.com",
-    "GD": "gd.com",
-    "FDX": "fedex.com",
-    "EMR": "emerson.com",
-    "MMM": "3m.com",
-    "TGT": "target.com",
-    "USB": "usbank.com",
-    "BNY": "bny.com",
-    "COF": "capitalone.com",
-    "GM": "gm.com",
-    "INTC": "intel.com",
-    "ACN": "accenture.com",
-    "AMT": "americantower.com",
+    'AAPL': 'apple.com',
+    'MSFT': 'microsoft.com',
+    'NVDA': 'nvidia.com',
+    'AMZN': 'amazon.com',
+    'GOOG': 'abc.xyz',
+    'GOOGL': 'abc.xyz',
+    'META': 'meta.com',
+    'BRK-B': 'berkshirehathaway.com',
+    'LLY': 'lilly.com',
+    'AVGO': 'broadcom.com',
+    'JPM': 'jpmorganchase.com',
+    'TSLA': 'tesla.com',
+    'WMT': 'walmart.com',
+    'V': 'visa.com',
+    'XOM': 'exxonmobil.com',
+    'UNH': 'unitedhealthgroup.com',
+    'MA': 'mastercard.com',
+    'PG': 'pg.com',
+    'COST': 'costco.com',
+    'JNJ': 'jnj.com',
+    'ORCL': 'oracle.com',
+    'HD': 'homedepot.com',
+    'BAC': 'bankofamerica.com',
+    'ABBV': 'abbvie.com',
+    'KO': 'coca-colacompany.com',
+    'NFLX': 'netflix.com',
+    'MRK': 'merck.com',
+    'CVX': 'chevron.com',
+    'CRM': 'salesforce.com',
+    'AMD': 'amd.com',
+    'PEP': 'pepsico.com',
+    'TMO': 'thermofisher.com',
+    'LIN': 'linde.com',
+    'TMUS': 't-mobile.com',
+    'WFC': 'wellsfargo.com',
+    'ADBE': 'adobe.com',
+    'CSCO': 'cisco.com',
+    'MCD': 'mcdonalds.com',
+    'ABT': 'abbott.com',
+    'PM': 'pmi.com',
+    'NOW': 'servicenow.com',
+    'IBM': 'ibm.com',
+    'AXP': 'americanexpress.com',
+    'MS': 'morganstanley.com',
+    'GE': 'ge.com',
+    'CAT': 'caterpillar.com',
+    'ISRG': 'intuitive.com',
+    'TXN': 'ti.com',
+    'GS': 'goldmansachs.com',
+    'INTU': 'intuit.com',
+    'VZ': 'verizon.com',
+    'DIS': 'thewaltdisneycompany.com',
+    'AMGN': 'amgen.com',
+    'QCOM': 'qualcomm.com',
+    'BKNG': 'bookingholdings.com',
+    'PF': 'pfizer.com',
+    'PFE': 'pfizer.com',
+    'T': 'att.com',
+    'BLK': 'blackrock.com',
+    'RTX': 'rtx.com',
+    'NEE': 'nexteraenergy.com',
+    'CMCSA': 'corporate.comcast.com',
+    'DHR': 'danaher.com',
+    'UBER': 'uber.com',
+    'SPGI': 'spglobal.com',
+    'LOW': 'lowes.com',
+    'UNP': 'up.com',
+    'LMT': 'lockheedmartin.com',
+    'HON': 'honeywell.com',
+    'COP': 'conocophillips.com',
+    'PLTR': 'palantir.com',
+    'SYK': 'stryker.com',
+    'SCHW': 'schwab.com',
+    'AMAT': 'appliedmaterials.com',
+    'LRCX': 'lamresearch.com',
+    'MU': 'micron.com',
+    'ANET': 'arista.com',
+    'PANW': 'paloaltonetworks.com',
+    'DELL': 'dell.com',
+    'C': 'citigroup.com',
+    'BA': 'boeing.com',
+    'GILD': 'gilead.com',
+    'MDT': 'medtronic.com',
+    'DE': 'deere.com',
+    'UPS': 'ups.com',
+    'SBUX': 'starbucks.com',
+    'MDLZ': 'mondelezinternational.com',
+    'BMY': 'bms.com',
+    'SO': 'southerncompany.com',
+    'DUK': 'duke-energy.com',
+    'MO': 'altria.com',
+    'CVS': 'cvshealth.com',
+    'GD': 'gd.com',
+    'FDX': 'fedex.com',
+    'EMR': 'emerson.com',
+    'MMM': '3m.com',
+    'TGT': 'target.com',
+    'USB': 'usbank.com',
+    'BNY': 'bny.com',
+    'COF': 'capitalone.com',
+    'GM': 'gm.com',
+    'INTC': 'intel.com',
+    'ACN': 'accenture.com',
+    'AMT': 'americantower.com',
 }
 
 DOMINIOS_IBOV: Dict[str, str] = {
-    "VALE3": "vale.com",
-    "PETR4": "petrobras.com.br",
-    "PETR3": "petrobras.com.br",
-    "ITUB4": "itau.com.br",
-    "ITSA4": "itausa.com.br",
-    "BBDC4": "bradesco.com.br",
-    "BBDC3": "bradesco.com.br",
-    "BBAS3": "bb.com.br",
-    "WEGE3": "weg.net",
-    "ABEV3": "ambev.com.br",
-    "B3SA3": "b3.com.br",
-    "BPAC11": "btgpactual.com",
-    "RENT3": "localiza.com",
-    "SUZB3": "suzano.com.br",
-    "RDOR3": "rededorsaoluiz.com.br",
-    "EQTL3": "equatorialenergia.com.br",
-    "PRIO3": "prio3.com.br",
-    "RADL3": "rdsaude.com.br",
-    "RAIL3": "rumolog.com",
-    "SBSP3": "sabesp.com.br",
-    "VIVT3": "telefonica.com.br",
-    "ENEV3": "eneva.com.br",
-    "BBSE3": "bbseguros.com.br",
-    "GGBR4": "gerdau.com",
-    "GOAU4": "gerdau.com",
-    "CMIG4": "cemig.com.br",
-    "CPLE3": "copel.com",
-    "UGPA3": "ultra.com.br",
-    "TIMS3": "tim.com.br",
-    "LREN3": "lojasrenner.com.br",
-    "TOTS3": "totvs.com",
-    "KLBN11": "klabin.com.br",
-    "ENGI11": "energisa.com.br",
-    "EGIE3": "engie.com.br",
-    "CSAN3": "cosan.com.br",
-    "VBBR3": "vibraenergia.com.br",
-    "ASAI3": "assai.com.br",
-    "HYPE3": "hypera.com.br",
-    "CPFE3": "cpfl.com.br",
-    "SANB11": "santander.com.br",
-    "MULT3": "multiplan.com.br",
-    "TAEE11": "taesa.com.br",
-    "CMIN3": "csnmineracao.com.br",
-    "CSNA3": "csn.com.br",
-    "CYRE3": "cyrela.com.br",
-    "MGLU3": "magazineluiza.com.br",
-    "HAPV3": "hapvida.com.br",
-    "FLRY3": "fleury.com.br",
-    "BRAP4": "bradespar.com.br",
-    "ALOS3": "allos.co",
-    "IGTI11": "iguatemi.com.br",
-    "AURE3": "aurenenergia.com.br",
-    "SMFT3": "smartfit.com.br",
-    "YDUQ3": "yduqs.com.br",
-    "COGN3": "cogna.com.br",
-    "USIM5": "usiminas.com",
-    "BEEF3": "minervafoods.com",
-    "MRVE3": "mrv.com.br",
-    "DIRR3": "direcional.com.br",
-    "CURY3": "cury.net",
-    "POMO4": "marcopolo.com.br",
-    "VAMO3": "vamos.com.br",
-    "CEAB3": "cea.com.br",
-    "CXSE3": "caixaseguridade.com.br",
-    "PSSA3": "portoseguro.com.br",
-    "CSMG3": "copasa.com.br",
+    'VALE3': 'vale.com',
+    'PETR4': 'petrobras.com.br',
+    'PETR3': 'petrobras.com.br',
+    'ITUB4': 'itau.com.br',
+    'ITSA4': 'itausa.com.br',
+    'BBDC4': 'bradesco.com.br',
+    'BBDC3': 'bradesco.com.br',
+    'BBAS3': 'bb.com.br',
+    'WEGE3': 'weg.net',
+    'ABEV3': 'ambev.com.br',
+    'B3SA3': 'b3.com.br',
+    'BPAC11': 'btgpactual.com',
+    'RENT3': 'localiza.com',
+    'SUZB3': 'suzano.com.br',
+    'RDOR3': 'rededorsaoluiz.com.br',
+    'EQTL3': 'equatorialenergia.com.br',
+    'PRIO3': 'prio3.com.br',
+    'RADL3': 'rdsaude.com.br',
+    'RAIL3': 'rumolog.com',
+    'SBSP3': 'sabesp.com.br',
+    'VIVT3': 'telefonica.com.br',
+    'ENEV3': 'eneva.com.br',
+    'BBSE3': 'bbseguros.com.br',
+    'GGBR4': 'gerdau.com',
+    'GOAU4': 'gerdau.com',
+    'CMIG4': 'cemig.com.br',
+    'CPLE3': 'copel.com',
+    'UGPA3': 'ultra.com.br',
+    'TIMS3': 'tim.com.br',
+    'LREN3': 'lojasrenner.com.br',
+    'TOTS3': 'totvs.com',
+    'KLBN11': 'klabin.com.br',
+    'ENGI11': 'energisa.com.br',
+    'EGIE3': 'engie.com.br',
+    'CSAN3': 'cosan.com.br',
+    'VBBR3': 'vibraenergia.com.br',
+    'ASAI3': 'assai.com.br',
+    'HYPE3': 'hypera.com.br',
+    'CPFE3': 'cpfl.com.br',
+    'SANB11': 'santander.com.br',
+    'MULT3': 'multiplan.com.br',
+    'TAEE11': 'taesa.com.br',
+    'CMIN3': 'csnmineracao.com.br',
+    'CSNA3': 'csn.com.br',
+    'CYRE3': 'cyrela.com.br',
+    'MGLU3': 'magazineluiza.com.br',
+    'HAPV3': 'hapvida.com.br',
+    'FLRY3': 'fleury.com.br',
+    'BRAP4': 'bradespar.com.br',
+    'ALOS3': 'allos.co',
+    'IGTI11': 'iguatemi.com.br',
+    'AURE3': 'aurenenergia.com.br',
+    'SMFT3': 'smartfit.com.br',
+    'YDUQ3': 'yduqs.com.br',
+    'COGN3': 'cogna.com.br',
+    'USIM5': 'usiminas.com',
+    'BEEF3': 'minervafoods.com',
+    'MRVE3': 'mrv.com.br',
+    'DIRR3': 'direcional.com.br',
+    'CURY3': 'cury.net',
+    'POMO4': 'marcopolo.com.br',
+    'VAMO3': 'vamos.com.br',
+    'CEAB3': 'cea.com.br',
+    'CXSE3': 'caixaseguridade.com.br',
+    'PSSA3': 'portoseguro.com.br',
+    'CSMG3': 'copasa.com.br',
 }
 
 TRADUCAO_SP100: Dict[str, str] = {
-    "Information Technology": "Tecnologia da Informação",
-    "Health Care": "Saúde",
-    "Financials": "Financeiro",
-    "Industrials": "Industrial",
-    "Communication Services": "Serviços de Comunicação",
-    "Consumer Discretionary": "Consumo Discricionário",
-    "Consumer Staples": "Consumo Básico",
-    "Energy": "Energia",
-    "Utilities": "Utilidades Públicas",
-    "Real Estate": "Imobiliário",
-    "Materials": "Materiais",
+    'Information Technology': 'Tecnologia da Informação',
+    'Health Care': 'Saúde',
+    'Financials': 'Financeiro',
+    'Industrials': 'Industrial',
+    'Communication Services': 'Serviços de Comunicação',
+    'Consumer Discretionary': 'Consumo Discricionário',
+    'Consumer Staples': 'Consumo Básico',
+    'Energy': 'Energia',
+    'Utilities': 'Utilidades Públicas',
+    'Real Estate': 'Imobiliário',
+    'Materials': 'Materiais',
 }
 
 # CSS sem espaços de recuo para evitar qualquer falha de parsing no navegador
@@ -547,7 +547,7 @@ st.markdown(CSS_GLOBAL, unsafe_allow_html=True)
 # ==============================================================================
 # 2. CARREGAMENTO DE DADOS, METADADOS E COTAÇÕES REAIS
 # ==============================================================================
-DATA_CORTE_TREINO = "2024-12-31"
+DATA_CORTE_TREINO = '2024-12-31'
 
 
 @st.cache_data
@@ -556,57 +556,57 @@ def carregar_mercado_completo(
 ) -> Tuple[
     pd.DataFrame, pd.Series, Dict[str, str], Dict[str, str], pd.Series, pd.Timestamp
 ]:
-    if mercado == "S&P 100 (EUA)":
+    if mercado == 'S&P 100 (EUA)':
         precos: pd.DataFrame = pd.read_csv(
-            "sp100_precos.csv", index_col="Date", parse_dates=True
+            'sp100_precos.csv', index_col='Date', parse_dates=True
         )
         indice_df: pd.DataFrame = pd.read_csv(
-            "sp100_indice.csv", index_col="Date", parse_dates=True
+            'sp100_indice.csv', index_col='Date', parse_dates=True
         )
         mapa_set: Dict[str, str] = {}
         mapa_nomes: Dict[str, str] = {}
-        if os.path.exists("SP100_wikipedia_21set2026.csv"):
-            df_s = pd.read_csv("SP100_wikipedia_21set2026.csv")
-            df_s["Sector"] = (
-                df_s["Sector"].astype(str).map(lambda x: TRADUCAO_SP100.get(x, x))
+        if os.path.exists('SP100_wikipedia_21set2026.csv'):
+            df_s = pd.read_csv('SP100_wikipedia_21set2026.csv')
+            df_s['Sector'] = (
+                df_s['Sector'].astype(str).map(lambda x: TRADUCAO_SP100.get(x, x))
             )
             mapa_set = dict(
-                zip(df_s["Symbol"].astype(str).str.strip(), df_s["Sector"].astype(str))
+                zip(df_s['Symbol'].astype(str).str.strip(), df_s['Sector'].astype(str))
             )
             col_nome = (
-                "Name"
-                if "Name" in df_s.columns
-                else ("Security" if "Security" in df_s.columns else None)
+                'Name'
+                if 'Name' in df_s.columns
+                else ('Security' if 'Security' in df_s.columns else None)
             )
             if col_nome:
                 mapa_nomes = dict(
                     zip(
-                        df_s["Symbol"].astype(str).str.strip(),
+                        df_s['Symbol'].astype(str).str.strip(),
                         df_s[col_nome].astype(str),
                     )
                 )
     else:
-        precos = pd.read_csv("ibov_precos.csv", index_col="Date", parse_dates=True)
-        indice_df = pd.read_csv("ibov_indice.csv", index_col="Date", parse_dates=True)
+        precos = pd.read_csv('ibov_precos.csv', index_col='Date', parse_dates=True)
+        indice_df = pd.read_csv('ibov_indice.csv', index_col='Date', parse_dates=True)
         mapa_set = {}
         mapa_nomes = {}
-        if os.path.exists("IBOVESPA_B3_24set2026.csv"):
-            df_s = pd.read_csv("IBOVESPA_B3_24set2026.csv")
-            codigos_sa = df_s["Codigo"].astype(str).str.strip() + ".SA"
-            mapa_set = dict(zip(codigos_sa, df_s["Setor"].astype(str)))
-            if "Acao" in df_s.columns:
-                mapa_nomes = dict(zip(codigos_sa, df_s["Acao"].astype(str)))
+        if os.path.exists('IBOVESPA_B3_24set2026.csv'):
+            df_s = pd.read_csv('IBOVESPA_B3_24set2026.csv')
+            codigos_sa = df_s['Codigo'].astype(str).str.strip() + '.SA'
+            mapa_set = dict(zip(codigos_sa, df_s['Setor'].astype(str)))
+            if 'Acao' in df_s.columns:
+                mapa_nomes = dict(zip(codigos_sa, df_s['Acao'].astype(str)))
 
     indice: pd.Series = indice_df.iloc[:, 0]
 
     pct_nulos = precos.loc[:DATA_CORTE_TREINO].isna().mean() * 100.0
     validas: List[str] = [str(c) for c in pct_nulos[pct_nulos <= 5.0].index.tolist()]
 
-    precos_clean: pd.DataFrame = precos[validas].ffill().dropna(how="any")
+    precos_clean: pd.DataFrame = precos[validas].ffill().dropna(how='any')
     indice_clean: pd.Series = indice.ffill().dropna()
 
     ret_acoes: pd.DataFrame = np.log(precos_clean / precos_clean.shift(1)).dropna(
-        how="any"
+        how='any'
     )
     ret_idx: pd.Series = np.log(indice_clean / indice_clean.shift(1)).dropna()
 
@@ -616,10 +616,10 @@ def carregar_mercado_completo(
     precos_clean = precos_clean.loc[datas_comuns]
 
     setores_map: Dict[str, str] = {
-        str(c): mapa_set.get(str(c), "Outros") for c in ret_acoes.columns
+        str(c): mapa_set.get(str(c), 'Outros') for c in ret_acoes.columns
     }
     nomes_map: Dict[str, str] = {
-        str(c): mapa_nomes.get(str(c), str(c).replace(".SA", ""))
+        str(c): mapa_nomes.get(str(c), str(c).replace('.SA', ''))
         for c in ret_acoes.columns
     }
     ultimas_cotacoes: pd.Series = precos_clean.iloc[-1]
@@ -631,7 +631,7 @@ def carregar_mercado_completo(
 # ==============================================================================
 # 3. MOTOR DE MODELAGEM CALIBRADO E VALIDAÇÃO WALK-FORWARD
 # ==============================================================================
-MODELO_CAMPEAO: str = "SLSQP + Ajuste de Volatilidade"
+MODELO_CAMPEAO: str = 'SLSQP + Ajuste de Volatilidade'
 K_PADRAO: int = 15
 PESO_MAX_PADRAO: float = 0.30
 LAMBDA_VOL_PADRAO: float = 0.25
@@ -643,12 +643,12 @@ def construir_features_treino(
 ) -> pd.DataFrame:
     var_idx = float(treino_y.var())
     feats = pd.DataFrame(index=treino_X.columns)
-    feats["corr_idx"] = treino_X.corrwith(treino_y)
-    feats["beta"] = treino_X.apply(lambda s: float(s.cov(treino_y)) / var_idx)
-    feats["vol_anual"] = treino_X.std() * np.sqrt(252.0)
-    feats["te_ind"] = treino_X.sub(treino_y, axis=0).std() * np.sqrt(252.0)
-    feats["setor"] = [setores_map.get(str(idx), "Outros") for idx in feats.index]
-    return feats.sort_values("corr_idx", ascending=False)
+    feats['corr_idx'] = treino_X.corrwith(treino_y)
+    feats['beta'] = treino_X.apply(lambda s: float(s.cov(treino_y)) / var_idx)
+    feats['vol_anual'] = treino_X.std() * np.sqrt(252.0)
+    feats['te_ind'] = treino_X.sub(treino_y, axis=0).std() * np.sqrt(252.0)
+    feats['setor'] = [setores_map.get(str(idx), 'Outros') for idx in feats.index]
+    return feats.sort_values('corr_idx', ascending=False)
 
 
 def filtrar_colinearidade(
@@ -659,7 +659,7 @@ def filtrar_colinearidade(
 ) -> List[str]:
     cands: List[str] = [
         str(c)
-        for c in feats.sort_values("corr_idx", ascending=False)
+        for c in feats.sort_values('corr_idx', ascending=False)
         .head(max_cand)
         .index.tolist()
     ]
@@ -710,10 +710,10 @@ def resolver_slsqp(
     res = minimize(
         func_obj,
         x0=w0,
-        method="SLSQP",
+        method='SLSQP',
         bounds=[(0.0, ub)] * n,
-        constraints=[{"type": "eq", "fun": lambda w: float(np.sum(w)) - 1.0}],
-        options={"ftol": 1e-11, "maxiter": 750},
+        constraints=[{'type': 'eq', 'fun': lambda w: float(np.sum(w)) - 1.0}],
+        options={'ftol': 1e-11, 'maxiter': 750},
     )
     w_s = pd.Series(np.maximum(res.x, 0.0), index=acoes)
     w_s = w_s[w_s > 1e-5]
@@ -776,8 +776,8 @@ def rodar_walk_forward_completo(
     lambda_turn: float = 1e-4,
     custo_bps: int = 10,
 ) -> Tuple[pd.DataFrame, pd.Series, pd.Series, pd.Series, pd.DataFrame]:
-    inicio = pd.to_datetime("2025-01-01")
-    pontos = pd.date_range(inicio, ret_acoes.index[-1], freq="3MS")
+    inicio = pd.to_datetime('2025-01-01')
+    pontos = pd.date_range(inicio, ret_acoes.index[-1], freq='3MS')
     if pontos[-1] < ret_acoes.index[-1]:
         pontos = pontos.union([ret_acoes.index[-1] + pd.Timedelta(days=1)])
 
@@ -829,16 +829,16 @@ def rodar_walk_forward_completo(
                 if len(bloco_x) > 1
                 else np.nan
             )
-            janelas[f"Carteira {len(janelas) + 1}"] = {
-                "Início": pd.Timestamp(bloco_x.index[0]).strftime("%d/%m/%Y"),
-                "Fim": pd.Timestamp(bloco_x.index[-1]).strftime("%d/%m/%Y"),
-                "Pregões": int(len(bloco_x)),
-                "Ações (K)": int(len(w_novo)),
-                "Retorno Carteira (%)": round(r_cart, 2),
-                "Retorno Índice (%)": round(r_idx, 2),
-                "Diferença (p.p.)": round(r_cart - r_idx, 2),
-                "TE (% a.a.)": round(te_j, 2) if pd.notna(te_j) else np.nan,
-                "Giro (%)": round(turn * 100.0, 1),
+            janelas[f'Carteira {len(janelas) + 1}'] = {
+                'Início': pd.Timestamp(bloco_x.index[0]).strftime('%d/%m/%Y'),
+                'Fim': pd.Timestamp(bloco_x.index[-1]).strftime('%d/%m/%Y'),
+                'Pregões': int(len(bloco_x)),
+                'Ações (K)': int(len(w_novo)),
+                'Retorno Carteira (%)': round(r_cart, 2),
+                'Retorno Índice (%)': round(r_idx, 2),
+                'Diferença (p.p.)': round(r_cart - r_idx, 2),
+                'TE (% a.a.)': round(te_j, 2) if pd.notna(te_j) else np.nan,
+                'Giro (%)': round(turn * 100.0, 1),
             }
 
     sb = pd.concat(ret_oos_bruto)
@@ -856,21 +856,21 @@ def rodar_walk_forward_completo(
     df_wf = pd.DataFrame(
         [
             {
-                "K Efetivo": int((w_ant > 1e-5).sum()),
-                "TE Walk-Forward (% a.a.)": round(te, 2),
-                "Vol. Carteira (%)": round(vol_c, 2),
-                "Gap Vol (p.p.)": round(abs(vol_c - vol_i), 2),
-                "Correlação (r)": round(float(sb.corr(si)), 4),
-                "R²": round(1.0 - ss_res / ss_tot, 4),
-                "Turnover Médio Trim. (%)": round(float(np.mean(turnovers)) * 100.0, 1),
-                "TD Bruta (%)": round(td_b, 2),
-                "TD Líquida (c/ custos %)": round(td_l, 2),
-                "Carteiras OOS": len(turnovers) + 1,
+                'K Efetivo': int((w_ant > 1e-5).sum()),
+                'TE Walk-Forward (% a.a.)': round(te, 2),
+                'Vol. Carteira (%)': round(vol_c, 2),
+                'Gap Vol (p.p.)': round(abs(vol_c - vol_i), 2),
+                'Correlação (r)': round(float(sb.corr(si)), 4),
+                'R²': round(1.0 - ss_res / ss_tot, 4),
+                'Turnover Médio Trim. (%)': round(float(np.mean(turnovers)) * 100.0, 1),
+                'TD Bruta (%)': round(td_b, 2),
+                'TD Líquida (c/ custos %)': round(td_l, 2),
+                'Carteiras OOS': len(turnovers) + 1,
             }
         ],
-        index=pd.Index([MODELO_CAMPEAO], name="Modelo"),
+        index=pd.Index([MODELO_CAMPEAO], name='Modelo'),
     )
-    df_janelas = pd.DataFrame.from_dict(janelas, orient="index")
+    df_janelas = pd.DataFrame.from_dict(janelas, orient='index')
     return df_wf, sl, w_ant, si, df_janelas
 
 
@@ -902,7 +902,7 @@ def calcular_curva_k(
         )
         cols_i = [str(c) for c in w_i.index.tolist()]
         te_i = float((oos_x[cols_i] @ w_i - oos_y).std() * np.sqrt(252.0) * 100.0)
-        linhas.append({"K": k_i, "TE": round(te_i, 2)})
+        linhas.append({'K': k_i, 'TE': round(te_i, 2)})
     return pd.DataFrame(linhas)
 
 
@@ -910,11 +910,11 @@ def calcular_curva_k(
 # 4. AUXILIARES VISUAIS (SEM INDENTAÇÃO HTML PARA EVITAR BLOCO DE CÓDIGO)
 # ==============================================================================
 def obter_url_logo(ticker: str, is_ibov: bool) -> str:
-    t_limpo = ticker.replace(".SA", "").strip()
+    t_limpo = ticker.replace('.SA', '').strip()
     dom = DOMINIOS_IBOV.get(t_limpo) if is_ibov else DOMINIOS_SP100.get(t_limpo)
     if dom:
-        return f"https://www.google.com/s2/favicons?domain={dom}&sz=128"
-    return ""
+        return f'https://www.google.com/s2/favicons?domain={dom}&sz=128'
+    return ''
 
 
 def renderizar_cards_carteira(
@@ -925,7 +925,7 @@ def renderizar_cards_carteira(
     is_ibov: bool,
     cor_barra: str,
 ) -> str:
-    moeda = "R$" if is_ibov else "US$"
+    moeda = 'R$' if is_ibov else 'US$'
     w_ord = pesos.sort_values(ascending=False)
     max_w = float(w_ord.max()) if len(w_ord) > 0 else 1.0
 
@@ -933,19 +933,19 @@ def renderizar_cards_carteira(
     for t_raw, w_val in w_ord.items():
         t_str = str(t_raw)
         w = float(w_val)
-        t_clean = t_str.replace(".SA", "")
+        t_clean = t_str.replace('.SA', '')
         sigla_curta = t_clean[:5]
         nome_emp = nomes_map.get(t_str, t_clean)
-        setor_emp = setores_map.get(t_str, "Outros")
+        setor_emp = setores_map.get(t_str, 'Outros')
         preco_atual = float(cotacoes.get(t_str, np.nan))
-        preco_txt = f"{moeda} {preco_atual:,.2f}" if pd.notna(preco_atual) else ""
+        preco_txt = f'{moeda} {preco_atual:,.2f}' if pd.notna(preco_atual) else ''
         url_logo = obter_url_logo(t_str, is_ibov)
         larg_pct = min(100.0, (w / max_w) * 100.0)
 
         img_tag = (
             f"<img src='{url_logo}' class='logo-img' onerror=\"this.style.display='none';\" />"
             if url_logo
-            else ""
+            else ''
         )
 
         # Sem indentação de 4 espaços para o Markdown do Streamlit não transformar em bloco <pre><code>
@@ -955,29 +955,29 @@ def renderizar_cards_carteira(
             f'<div class="stock-info">'
             f'<div class="stock-top">'
             f'<span class="stock-ticker">{t_clean}</span>'
-            f'<span class="stock-weight" style="color: {cor_barra} !important;">{w*100:.2f}%</span>'
-            f"</div>"
+            f'<span class="stock-weight" style="color: {cor_barra} !important;">{w * 100:.2f}%</span>'
+            f'</div>'
             f'<div class="stock-name" title="{nome_emp}">{nome_emp}</div>'
             f'<div class="stock-sector" title="{setor_emp}">{setor_emp}</div>'
             f'<div class="stock-price">{preco_txt}</div>'
             f'<div class="weight-bar-bg">'
             f'<div style="width: {larg_pct:.1f}%; height: 100%; background-color: {cor_barra};"></div>'
-            f"</div>"
-            f"</div>"
-            f"</div>"
+            f'</div>'
+            f'</div>'
+            f'</div>'
         )
         cards_html.append(card_item)
-    cards_html.append("</div>")
-    return "".join(cards_html)
+    cards_html.append('</div>')
+    return ''.join(cards_html)
 
 
 def renderizar_tabela_html(
     df: pd.DataFrame,
-    col_destaque: str = "TE Walk-Forward (% a.a.)",
-    cor_header: str = "#0F4C81",
-    nome_indice_col: str = "Família de Modelo",
+    col_destaque: str = 'TE Walk-Forward (% a.a.)',
+    cor_header: str = '#0F4C81',
+    nome_indice_col: str = 'Família de Modelo',
 ) -> str:
-    melhor_idx = str(df[col_destaque].idxmin()) if col_destaque in df.columns else ""
+    melhor_idx = str(df[col_destaque].idxmin()) if col_destaque in df.columns else ''
     html = ['<div class="finor-table-container"><table class="finor-table">']
     html.append(
         f'<thead style="background-color: {cor_header} !important;"><tr><th>{nome_indice_col}</th>'
@@ -986,79 +986,79 @@ def renderizar_tabela_html(
         html.append(
             f'<th style="background-color: {cor_header} !important; color: #FFFFFF !important;">{c}</th>'
         )
-    html.append("</tr></thead><tbody>")
+    html.append('</tr></thead><tbody>')
 
     for idx_raw, row in df.iterrows():
         idx_str = str(idx_raw)
         is_best = idx_str == melhor_idx
-        tr_class = ' class="best-row"' if is_best else ""
+        tr_class = ' class="best-row"' if is_best else ''
         nome_exib = (
             f'{idx_str} <span class="badge-best">Campeão</span>' if is_best else idx_str
         )
-        html.append(f"<tr{tr_class}><td>{nome_exib}</td>")
+        html.append(f'<tr{tr_class}><td>{nome_exib}</td>')
         for c in df.columns:
             val = row[c]
             if isinstance(val, (int, np.integer)) or c in [
-                "K Efetivo",
-                "Carteiras OOS",
-                "Qtd. Ações (Inteiras)",
+                'K Efetivo',
+                'Carteiras OOS',
+                'Qtd. Ações (Inteiras)',
             ]:
-                txt = f"{int(val):,}".replace(",", ".")
-            elif c in ["Correlação (r)", "R²"]:
-                txt = f"{float(val):.4f}"
+                txt = f'{int(val):,}'.replace(',', '.')
+            elif c in ['Correlação (r)', 'R²']:
+                txt = f'{float(val):.4f}'
             elif isinstance(val, (float, np.floating)):
-                txt = f"{float(val):,.2f}"
+                txt = f'{float(val):,.2f}'
             else:
                 txt = str(val)
-            html.append(f"<td>{txt}</td>")
-        html.append("</tr>")
-    html.append("</tbody></table></div>")
-    return "".join(html)
+            html.append(f'<td>{txt}</td>')
+        html.append('</tr>')
+    html.append('</tbody></table></div>')
+    return ''.join(html)
 
 
 def configurar_grafico_padrao(
-    fig: go.Figure, altura: int = 460, y_title: str = "", x_title: str = "Data"
+    fig: go.Figure, altura: int = 460, y_title: str = '', x_title: str = 'Data'
 ) -> go.Figure:
     fig.update_layout(
-        paper_bgcolor="#FFFFFF",
-        plot_bgcolor="#FFFFFF",
+        paper_bgcolor='#FFFFFF',
+        plot_bgcolor='#FFFFFF',
         height=altura,
-        font=dict(family="sans-serif", size=12, color="#222222"),
-        hovermode="x unified",
+        font=dict(family='sans-serif', size=12, color='#222222'),
+        hovermode='x unified',
         hoverlabel=dict(
-            bgcolor="#FFFFFF", font_size=12, font_color="#1A202C", bordercolor="#CBD5E1"
+            bgcolor='#FFFFFF', font_size=12, font_color='#1A202C', bordercolor='#CBD5E1'
         ),
         margin=dict(l=65, r=25, t=55, b=55),
         legend=dict(
-            orientation="h",
-            yanchor="bottom",
+            orientation='h',
+            yanchor='bottom',
             y=1.02,
-            xanchor="left",
+            xanchor='left',
             x=0,
-            bgcolor="rgba(255,255,255,0.95)",
-            bordercolor="#E2E8F0",
+            bgcolor='rgba(255,255,255,0.95)',
+            bordercolor='#E2E8F0',
             borderwidth=1,
-            font=dict(size=11.5, color="#1A202C"),
+            font=dict(size=11.5, color='#1A202C'),
         ),
         xaxis=dict(
-            title=dict(text=x_title, font=dict(size=12.5, color="#1A202C")),
-            tickfont=dict(size=11, color="#333333"),
+            title=dict(text=x_title, font=dict(size=12.5, color='#1A202C')),
+            tickfont=dict(size=11, color='#333333'),
             showgrid=False,
             showline=True,
-            linecolor="#CCCCCC",
+            linecolor='#CCCCCC',
             linewidth=1,
-            ticks="outside",
-            tickcolor="#CCCCCC",
+            ticks='outside',
+            tickcolor='#CCCCCC',
         ),
         yaxis=dict(
-            title=dict(text=y_title, font=dict(size=12.5, color="#1A202C")),
-            tickfont=dict(size=11, color="#333333"),
+            title=dict(text=y_title, font=dict(size=12.5, color='#1A202C')),
+            tickfont=dict(size=11, color='#333333'),
             showgrid=True,
-            gridcolor="#E5E5E5",
+            gridcolor='#E5E5E5',
             gridwidth=1,
-            griddash="dash",
+            griddash='dash',
             showline=True,
-            linecolor="#CCCCCC",
+            linecolor='#CCCCCC',
             linewidth=1,
             zeroline=False,
         ),
@@ -1069,12 +1069,12 @@ def configurar_grafico_padrao(
 # ==============================================================================
 # 5. SIDEBAR: SELETOR DE ÍNDICE E PARÂMETROS DA CARTEIRA
 # ==============================================================================
-@st.cache_resource(show_spinner="Pré-processando S&P 100 e IBOVESPA (K = 15)...")
+@st.cache_resource(show_spinner='Pré-processando S&P 100 e IBOVESPA (K = 15)...')
 def preaquecer_cache() -> bool:
     """Roda uma única vez por servidor: deixa walk-forward e curva de K com os
     parâmetros padrão já calculados para os dois mercados. Só reprocessa quando
     o usuário muda algum parâmetro na barra lateral."""
-    for mercado in ("S&P 100 (EUA)", "IBOVESPA (Brasil)"):
+    for mercado in ('S&P 100 (EUA)', 'IBOVESPA (Brasil)'):
         ret_a, ret_i, setores, _, _, _ = carregar_mercado_completo(mercado)
         rodar_walk_forward_completo(
             ret_a,
@@ -1096,20 +1096,20 @@ def preaquecer_cache() -> bool:
 
 preaquecer_cache()
 
-st.sidebar.markdown("### >>>>> ÍNDICE & PARÂMETROS")
+st.sidebar.markdown('### >>>>> ÍNDICE & PARÂMETROS')
 mercado_sel = st.sidebar.radio(
-    "Selecione o Índice (Benchmark)",
-    ["S&P 100 (EUA)", "IBOVESPA (Brasil)"],
+    'Selecione o Índice (Benchmark)',
+    ['S&P 100 (EUA)', 'IBOVESPA (Brasil)'],
     index=0,
 )
 
-is_ibov = "IBOV" in mercado_sel
-cor_primaria = CORES["ibov"] if is_ibov else CORES["sp100"]
-cor_secundaria = CORES["ibov_sec"] if is_ibov else CORES["sp100_sec"]
-moeda_simb = "R$" if is_ibov else "US$"
+is_ibov = 'IBOV' in mercado_sel
+cor_primaria = CORES['ibov'] if is_ibov else CORES['sp100']
+cor_secundaria = CORES['ibov_sec'] if is_ibov else CORES['sp100_sec']
+moeda_simb = 'R$' if is_ibov else 'US$'
 
 k_val = st.sidebar.slider(
-    "Cardinalidade da Carteira (K ações)",
+    'Cardinalidade da Carteira (K ações)',
     min_value=5,
     max_value=35,
     value=K_PADRAO,
@@ -1117,29 +1117,29 @@ k_val = st.sidebar.slider(
 )
 peso_max_val = (
     st.sidebar.slider(
-        "Peso Máximo por Ação (%)",
-        min_value=10,
-        max_value=100,
+        'Peso Máximo por Ação (%)',
+        min_value=7,
+        max_value=30,
         value=int(PESO_MAX_PADRAO * 100),
-        step=5,
+        step=1,
     )
     / 100.0
 )
 lambda_vol_val = st.sidebar.slider(
-    "Ajuste de Volatilidade (λ_vol)",
+    'Ajuste de Volatilidade (λ_vol)',
     min_value=0.0,
     max_value=1.0,
     value=LAMBDA_VOL_PADRAO,
     step=0.05,
 )
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("### >>>>> PROTOCOLO DE VALIDAÇÃO")
+st.sidebar.markdown('---')
+st.sidebar.markdown('### >>>>> PROTOCOLO DE VALIDAÇÃO')
 st.sidebar.info(
-    "**Validação Walk-Forward Estrita**\n\n"
-    "• **Janela Móvel de Treino:** 24 meses\n"
-    "• **Rebalanceamento:** Trimestral (7 carteiras consecutivas fora da amostra)\n"
-    "• **Custos de Transação:** 0,10% (10 bps) descontados sobre o giro (*turnover*)"
+    '**Validação Walk-Forward Estrita**\n\n'
+    '• **Janela Móvel de Treino:** 24 meses\n'
+    '• **Rebalanceamento:** Trimestral (7 carteiras consecutivas fora da amostra)\n'
+    '• **Custos de Transação:** 0,10% (10 bps) descontados sobre o giro (*turnover*)'
 )
 
 (
@@ -1151,7 +1151,7 @@ st.sidebar.info(
     data_ultima_cot,
 ) = carregar_mercado_completo(mercado_sel)
 
-with st.spinner("Reprocessando a carteira com os novos parâmetros..."):
+with st.spinner('Reprocessando a carteira com os novos parâmetros...'):
     df_wf, serie_wf_liq, pesos_atuais, idx_oos, df_janelas = (
         rodar_walk_forward_completo(
             ret_acoes_full,
@@ -1171,9 +1171,9 @@ with st.spinner("Reprocessando a carteira com os novos parâmetros..."):
     )
 
 metricas = df_wf.loc[MODELO_CAMPEAO]
-te_melhor = float(metricas["TE Walk-Forward (% a.a.)"])
-td_liquida = float(metricas["TD Líquida (c/ custos %)"])
-vol_cart_oos = float(metricas["Vol. Carteira (%)"])
+te_melhor = float(metricas['TE Walk-Forward (% a.a.)'])
+td_liquida = float(metricas['TD Líquida (c/ custos %)'])
+vol_cart_oos = float(metricas['Vol. Carteira (%)'])
 vol_idx_oos = float(idx_oos.std() * np.sqrt(252.0) * 100.0)
 
 # ==============================================================================
@@ -1189,16 +1189,16 @@ emblema_html = (
     '<span style="font-size: 0.85rem; font-weight: 800; margin-top: 2px;">100</span></div>'
 )
 
-dt_ini_str = pd.Timestamp(idx_oos.index[0]).strftime("%d/%m/%Y")
-dt_fim_str = pd.Timestamp(idx_oos.index[-1]).strftime("%d/%m/%Y")
+dt_ini_str = pd.Timestamp(idx_oos.index[0]).strftime('%d/%m/%Y')
+dt_fim_str = pd.Timestamp(idx_oos.index[-1]).strftime('%d/%m/%Y')
 
 header_html = (
     f'<div class="header-box">{emblema_html}<div>'
     f'<div class="finor-tag">>>>>> FINOR × BOOTCAMP DATA SCIENCE 2026 • APRESENTAÇÃO FINAL</div>'
     f'<div class="finor-title">Index Tracking Executivo & Simulador de Carteira: {mercado_sel}</div>'
     f'<div class="finor-subtitle">Replicação enxuta com <b>K = {k_val} ações</b> (de {ret_acoes_full.shape[1]} elegíveis) '
-    f"validada em <b>7 carteiras trimestrais Walk-Forward fora da amostra</b> ({dt_ini_str} a {dt_fim_str}).</div>"
-    f"</div></div>"
+    f'validada em <b>7 carteiras trimestrais Walk-Forward fora da amostra</b> ({dt_ini_str} a {dt_fim_str}).</div>'
+    f'</div></div>'
 )
 st.markdown(header_html, unsafe_allow_html=True)
 
@@ -1208,23 +1208,23 @@ kpi_html = (
     f'<div class="kpi-label">DESVIO ANUALIZADO (TRACKING ERROR)</div>'
     f'<div class="kpi-value">{te_melhor:.2f}% a.a.</div>'
     f'<span class="kpi-delta good">Diferença acumulada líquida: {td_liquida:+.2f} p.p.</span>'
-    f"</div>"
+    f'</div>'
     f'<div class="kpi-card" style="border-left-color: {cor_primaria};">'
     f'<div class="kpi-label">MODELO</div>'
     f'<div class="kpi-value">{MODELO_CAMPEAO}</div>'
     f'<span class="kpi-delta good">R² = {float(metricas["R²"]):.4f} | r = {float(metricas["Correlação (r)"]):.4f}</span>'
-    f"</div>"
+    f'</div>'
     f'<div class="kpi-card" style="border-left-color: {cor_primaria};">'
     f'<div class="kpi-label">ADERÊNCIA DE VOLATILIDADE</div>'
     f'<div class="kpi-value">{vol_cart_oos:.2f}% a.a.</div>'
     f'<span class="kpi-delta neutral">Índice: {vol_idx_oos:.2f}% (Gap: {float(metricas["Gap Vol (p.p.)"]):.2f} p.p.)</span>'
-    f"</div>"
+    f'</div>'
     f'<div class="kpi-card" style="border-left-color: {cor_primaria};">'
     f'<div class="kpi-label">GIRO TRIMESTRAL (TURNOVER)</div>'
     f'<div class="kpi-value">{float(metricas["Turnover Médio Trim. (%)"]):.1f}%</div>'
     f'<span class="kpi-delta neutral">7 Rebalanceamentos OOS (c/ custo 0,10%)</span>'
-    f"</div>"
-    f"</div>"
+    f'</div>'
+    f'</div>'
 )
 st.markdown(kpi_html, unsafe_allow_html=True)
 
@@ -1233,10 +1233,10 @@ st.markdown(kpi_html, unsafe_allow_html=True)
 # ==============================================================================
 tab1, tab2, tab3, tab4 = st.tabs(
     [
-        "1. Carteira Campeã & Simulador de Investimento",
-        "2. Desempenho Walk-Forward (7 Carteiras OOS)",
-        "3. Curva Desvio × Nº de Ações (Escolha do K)",
-        "4. Equilíbrio Setorial & Risco",
+        '1. Carteira Campeã & Simulador de Investimento',
+        '2. Desempenho Walk-Forward (7 Carteiras OOS)',
+        '3. Curva Desvio × Nº de Ações (Escolha do K)',
+        '4. Equilíbrio Setorial & Risco',
     ]
 )
 
@@ -1250,12 +1250,12 @@ with tab1:
         passo_val = 5000.0 if is_ibov else 2500.0
         valor_investir = float(
             st.number_input(
-                f"Valor do aporte para simulação de compra ({moeda_simb}):",
+                f'Valor do aporte para simulação de compra ({moeda_simb}):',
                 min_value=1000.0,
                 max_value=100000000.0,
                 value=valor_padrao,
                 step=passo_val,
-                format="%.2f",
+                format='%.2f',
             )
         )
 
@@ -1290,37 +1290,37 @@ with tab1:
     )
     st.markdown(
         f'<div class="sec-sub">Lotes inteiros calculados pela última cotação — '
-        f"<b>Total Alocado: {moeda_simb} {float(valor_efetivo.sum()):,.2f} ({float(peso_efetivo.sum()):.2f}%)</b> | "
-        f"<b>Saldo Residual em Caixa: {moeda_simb} {caixa_residual:,.2f}</b></div>",
+        f'<b>Total Alocado: {moeda_simb} {float(valor_efetivo.sum()):,.2f} ({float(peso_efetivo.sum()):.2f}%)</b> | '
+        f'<b>Saldo Residual em Caixa: {moeda_simb} {caixa_residual:,.2f}</b></div>',
         unsafe_allow_html=True,
     )
 
     df_boleta = pd.DataFrame(
         {
-            "Empresa": [
-                nomes_map.get(str(t), str(t).replace(".SA", "")) for t in w_atual.index
+            'Empresa': [
+                nomes_map.get(str(t), str(t).replace('.SA', '')) for t in w_atual.index
             ],
-            "Setor": [setores_map.get(str(t), "Outros") for t in w_atual.index],
-            "Peso Modelo (%)": (w_atual.to_numpy(dtype=float) * 100.0).round(2),
-            f"Cotação ({moeda_simb})": cotacoes_cart.to_numpy(dtype=float).round(2),
-            f"Orçamento Alvo ({moeda_simb})": orcamento_alvo.to_numpy(
+            'Setor': [setores_map.get(str(t), 'Outros') for t in w_atual.index],
+            'Peso Modelo (%)': (w_atual.to_numpy(dtype=float) * 100.0).round(2),
+            f'Cotação ({moeda_simb})': cotacoes_cart.to_numpy(dtype=float).round(2),
+            f'Orçamento Alvo ({moeda_simb})': orcamento_alvo.to_numpy(
                 dtype=float
             ).round(2),
-            "Qtd. Ações (Inteiras)": qtd_inteira.to_numpy(dtype=int),
-            f"Valor Comprado ({moeda_simb})": valor_efetivo.to_numpy(dtype=float).round(
+            'Qtd. Ações (Inteiras)': qtd_inteira.to_numpy(dtype=int),
+            f'Valor Comprado ({moeda_simb})': valor_efetivo.to_numpy(dtype=float).round(
                 2
             ),
-            "Peso Realizado (%)": peso_efetivo.to_numpy(dtype=float).round(2),
+            'Peso Realizado (%)': peso_efetivo.to_numpy(dtype=float).round(2),
         },
-        index=[str(t).replace(".SA", "") for t in w_atual.index],
+        index=[str(t).replace('.SA', '') for t in w_atual.index],
     )
 
     st.markdown(
         renderizar_tabela_html(
             df_boleta,
-            col_destaque="",
+            col_destaque='',
             cor_header=cor_primaria,
-            nome_indice_col="Ticker",
+            nome_indice_col='Ticker',
         ),
         unsafe_allow_html=True,
     )
@@ -1341,34 +1341,34 @@ with tab2:
     idx_acum = np.exp(idx_oos.cumsum()) * 100.0
     cart_acum = np.exp(serie_wf_liq.cumsum()) * 100.0
     fig_wf = go.Figure()
-    fig_wf.add_hline(y=100, line_dash="dot", line_color="#A0AEC0", line_width=1.2)
+    fig_wf.add_hline(y=100, line_dash='dot', line_color='#A0AEC0', line_width=1.2)
     fig_wf.add_trace(
         go.Scatter(
             x=idx_acum.index,
             y=idx_acum,
-            mode="lines",
-            name=f"Benchmark ({mercado_sel})",
-            line=dict(color=CORES["grafite"], width=3.3),
+            mode='lines',
+            name=f'Benchmark ({mercado_sel})',
+            line=dict(color=CORES['grafite'], width=3.3),
         )
     )
     fig_wf.add_trace(
         go.Scatter(
             x=cart_acum.index,
             y=cart_acum,
-            mode="lines",
-            name=f"{MODELO_CAMPEAO} (TE: {te_melhor:.2f}%)",
+            mode='lines',
+            name=f'{MODELO_CAMPEAO} (TE: {te_melhor:.2f}%)',
             line=dict(color=cor_primaria, width=3.0),
         )
     )
 
-    for dt_reb in pd.date_range("2025-04-01", idx_oos.index[-1], freq="3MS"):
-        fig_wf.add_vline(x=dt_reb, line_dash="dot", line_color="#E2E8F0", line_width=1)
+    for dt_reb in pd.date_range('2025-04-01', idx_oos.index[-1], freq='3MS'):
+        fig_wf.add_vline(x=dt_reb, line_dash='dot', line_color='#E2E8F0', line_width=1)
 
     fig_wf = configurar_grafico_padrao(
         fig_wf,
         altura=470,
-        y_title=f"Evolução do Patrimônio (Base 100 = {moeda_simb} 100)",
-        x_title="Data (Linhas pontilhadas verticais indicam rebalanceamentos trimestrais)",
+        y_title=f'Evolução do Patrimônio (Base 100 = {moeda_simb} 100)',
+        x_title='Data (Linhas pontilhadas verticais indicam rebalanceamentos trimestrais)',
     )
     st.plotly_chart(fig_wf, use_container_width=True)
 
@@ -1383,9 +1383,9 @@ with tab2:
     st.markdown(
         renderizar_tabela_html(
             df_wf,
-            col_destaque="",
+            col_destaque='',
             cor_header=cor_primaria,
-            nome_indice_col="Modelo",
+            nome_indice_col='Modelo',
         ),
         unsafe_allow_html=True,
     )
@@ -1401,9 +1401,9 @@ with tab2:
     st.markdown(
         renderizar_tabela_html(
             df_janelas,
-            col_destaque="",
+            col_destaque='',
             cor_header=cor_primaria,
-            nome_indice_col="Carteira",
+            nome_indice_col='Carteira',
         ),
         unsafe_allow_html=True,
     )
@@ -1424,31 +1424,31 @@ with tab3:
     fig_k = go.Figure()
     fig_k.add_trace(
         go.Scatter(
-            x=df_curva_k["K"],
-            y=df_curva_k["TE"],
-            mode="lines+markers",
+            x=df_curva_k['K'],
+            y=df_curva_k['TE'],
+            mode='lines+markers',
             name=MODELO_CAMPEAO,
             line=dict(color=cor_primaria, width=3.0),
             marker=dict(size=8),
         )
     )
     fig_k.add_vline(
-        x=k_val, line_dash="dash", line_color=CORES["alerta"], line_width=1.5
+        x=k_val, line_dash='dash', line_color=CORES['alerta'], line_width=1.5
     )
     fig_k.add_annotation(
         x=k_val,
-        y=float(df_curva_k["TE"].max()) * 0.94,
-        text=f"K selecionado = {k_val} ações",
+        y=float(df_curva_k['TE'].max()) * 0.94,
+        text=f'K selecionado = {k_val} ações',
         showarrow=False,
-        xanchor="left",
+        xanchor='left',
         xshift=6,
-        font=dict(color=CORES["alerta"], size=11.5),
+        font=dict(color=CORES['alerta'], size=11.5),
     )
     fig_k = configurar_grafico_padrao(
         fig_k,
         altura=450,
-        x_title="Número de Ações na Carteira (K)",
-        y_title="Tracking Error Fora da Amostra (% a.a.)",
+        x_title='Número de Ações na Carteira (K)',
+        y_title='Tracking Error Fora da Amostra (% a.a.)',
     )
     st.plotly_chart(fig_k, use_container_width=True)
 
@@ -1470,20 +1470,20 @@ with tab4:
         fig_vol = go.Figure()
         fig_vol.add_trace(
             go.Bar(
-                y=["Índice (benchmark)", "Carteira"],
+                y=['Índice (benchmark)', 'Carteira'],
                 x=[vol_idx_oos, vol_cart_oos],
-                orientation="h",
-                marker_color=[CORES["grafite"], cor_primaria],
-                text=[f"{vol_idx_oos:.2f}%", f"{vol_cart_oos:.2f}%"],
-                textposition="outside",
-                textfont=dict(color="#1A202C", size=11),
+                orientation='h',
+                marker_color=[CORES['grafite'], cor_primaria],
+                text=[f'{vol_idx_oos:.2f}%', f'{vol_cart_oos:.2f}%'],
+                textposition='outside',
+                textfont=dict(color='#1A202C', size=11),
             )
         )
         fig_vol = configurar_grafico_padrao(
             fig_vol,
             altura=420,
-            x_title="Volatilidade Anualizada (% a.a.)",
-            y_title="",
+            x_title='Volatilidade Anualizada (% a.a.)',
+            y_title='',
         )
         fig_vol.update_xaxes(range=[0, max(vol_idx_oos, vol_cart_oos) * 1.28])
         st.plotly_chart(fig_vol, use_container_width=True)
@@ -1501,7 +1501,7 @@ with tab4:
         s_set_cart = (
             pd.Series(
                 pesos_atuais.to_numpy(dtype=float) * 100.0,
-                index=[setores_map.get(str(t), "Outros") for t in pesos_atuais.index],
+                index=[setores_map.get(str(t), 'Outros') for t in pesos_atuais.index],
             )
             .groupby(level=0)
             .sum()
@@ -1510,7 +1510,7 @@ with tab4:
             pd.Series(
                 1.0,
                 index=[
-                    setores_map.get(str(t), "Outros") for t in ret_acoes_full.columns
+                    setores_map.get(str(t), 'Outros') for t in ret_acoes_full.columns
                 ],
             )
             .groupby(level=0)
@@ -1521,38 +1521,38 @@ with tab4:
         df_set_comp = (
             pd.DataFrame(
                 {
-                    "Carteira Campeã (%)": s_set_cart,
-                    "Universo do Índice (%)": s_set_univ,
+                    'Carteira Campeã (%)': s_set_cart,
+                    'Universo do Índice (%)': s_set_univ,
                 }
             )
             .fillna(0.0)
-            .sort_values("Carteira Campeã (%)", ascending=True)
+            .sort_values('Carteira Campeã (%)', ascending=True)
         )
 
         fig_set = go.Figure()
         fig_set.add_trace(
             go.Bar(
                 y=df_set_comp.index,
-                x=df_set_comp["Universo do Índice (%)"],
-                name="Proporção no Índice (%)",
-                orientation="h",
-                marker_color=CORES["neutro"],
+                x=df_set_comp['Universo do Índice (%)'],
+                name='Proporção no Índice (%)',
+                orientation='h',
+                marker_color=CORES['neutro'],
             )
         )
         fig_set.add_trace(
             go.Bar(
                 y=df_set_comp.index,
-                x=df_set_comp["Carteira Campeã (%)"],
-                name="Peso na Carteira (%)",
-                orientation="h",
+                x=df_set_comp['Carteira Campeã (%)'],
+                name='Peso na Carteira (%)',
+                orientation='h',
                 marker_color=cor_primaria,
             )
         )
-        fig_set.update_layout(barmode="group")
+        fig_set.update_layout(barmode='group')
         fig_set = configurar_grafico_padrao(
             fig_set,
             altura=420,
-            x_title="Participação Setorial (%)",
-            y_title="Setor Econômico",
+            x_title='Participação Setorial (%)',
+            y_title='Setor Econômico',
         )
         st.plotly_chart(fig_set, use_container_width=True)

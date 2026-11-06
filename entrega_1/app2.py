@@ -1,5 +1,5 @@
-import os
 import warnings
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 warnings.filterwarnings('ignore')
@@ -12,6 +12,9 @@ from scipy.optimize import minimize
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.linear_model import ElasticNet, ElasticNetCV, Lasso, enet_path
 from sklearn.model_selection import TimeSeriesSplit
+
+# Pasta do próprio app2.py: os CSVs são lidos a partir daqui, não do diretório de execução
+BASE_DIR = Path(__file__).resolve().parent
 
 # ==============================================================================
 # 1. CONFIGURAÇÃO DA PÁGINA E ESTILO VISUAL (NYT EDITORIAL + PALETA FINOR)
@@ -559,15 +562,16 @@ def carregar_mercado_completo(
 ]:
     if mercado == 'S&P 100 (EUA)':
         precos: pd.DataFrame = pd.read_csv(
-            'sp100_precos.csv', index_col='Date', parse_dates=True
+            BASE_DIR / 'sp100_precos.csv', index_col='Date', parse_dates=True
         )
         indice_df: pd.DataFrame = pd.read_csv(
-            'sp100_indice.csv', index_col='Date', parse_dates=True
+            BASE_DIR / 'sp100_indice.csv', index_col='Date', parse_dates=True
         )
         mapa_set: Dict[str, str] = {}
         mapa_nomes: Dict[str, str] = {}
-        if os.path.exists('SP100_wikipedia_21set2026.csv'):
-            df_s = pd.read_csv('SP100_wikipedia_21set2026.csv')
+        arq_sp = BASE_DIR / 'SP100_wikipedia_21set2026.csv'
+        if arq_sp.exists():
+            df_s = pd.read_csv(arq_sp)
             df_s['Sector'] = (
                 df_s['Sector'].astype(str).map(lambda x: TRADUCAO_SP100.get(x, x))
             )
@@ -587,12 +591,17 @@ def carregar_mercado_completo(
                     )
                 )
     else:
-        precos = pd.read_csv('ibov_precos.csv', index_col='Date', parse_dates=True)
-        indice_df = pd.read_csv('ibov_indice.csv', index_col='Date', parse_dates=True)
+        precos = pd.read_csv(
+            BASE_DIR / 'ibov_precos.csv', index_col='Date', parse_dates=True
+        )
+        indice_df = pd.read_csv(
+            BASE_DIR / 'ibov_indice.csv', index_col='Date', parse_dates=True
+        )
         mapa_set = {}
         mapa_nomes = {}
-        if os.path.exists('IBOVESPA_B3_24set2026.csv'):
-            df_s = pd.read_csv('IBOVESPA_B3_24set2026.csv')
+        arq_ibov = BASE_DIR / 'IBOVESPA_B3_24set2026.csv'
+        if arq_ibov.exists():
+            df_s = pd.read_csv(arq_ibov)
             codigos_sa = df_s['Codigo'].astype(str).str.strip() + '.SA'
             mapa_set = dict(zip(codigos_sa, df_s['Setor'].astype(str)))
             if 'Acao' in df_s.columns:

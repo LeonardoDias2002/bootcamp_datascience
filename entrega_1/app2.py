@@ -10,7 +10,8 @@ import plotly.graph_objects as go
 import streamlit as st
 from scipy.optimize import minimize
 from sklearn.cluster import AgglomerativeClustering
-from sklearn.linear_model import Lasso
+from sklearn.linear_model import ElasticNet, ElasticNetCV, Lasso, enet_path
+from sklearn.model_selection import TimeSeriesSplit
 
 # ==============================================================================
 # 1. CONFIGURAÇÃO DA PÁGINA E ESTILO VISUAL (NYT EDITORIAL + PALETA FINOR)
@@ -631,10 +632,14 @@ def carregar_mercado_completo(
 # ==============================================================================
 # 3. MOTOR DE MODELAGEM CALIBRADO E VALIDAÇÃO WALK-FORWARD
 # ==============================================================================
-MODELO_CAMPEAO: str = 'SLSQP + Ajuste de Volatilidade'
+MODELO_SLSQP: str = 'SLSQP + Ajuste de Volatilidade'
+MODELO_ENET: str = 'Elastic Net Positivo'
+MODELOS: List[str] = [MODELO_SLSQP, MODELO_ENET]
+ESCOLHA_AUTO: str = 'Campeão (menor TE)'
 K_PADRAO: int = 15
 PESO_MAX_PADRAO: float = 0.30
 LAMBDA_VOL_PADRAO: float = 0.25
+L1_RATIO_PADRAO: float = 0.5
 KS_GRID: List[int] = [5, 8, 10, 12, 15, 20, 25, 30, 35]
 
 
@@ -765,6 +770,127 @@ def treinar_modelo_campeao(
     )
 
 
+def _aplicar_teto_pesos(w: np.ndarray, teto: float) -> np.ndarray:
+    """Normaliza os pesos para somar 1 e impõe o teto por ação, redistribuindo
+    o excesso proporcionalmente entre as posições que ainda estão abaixo do teto."""
+    w = np.maximum(np.asarray(w, dtype=float), 0.0)
+    w = w / float(w.sum())
+    for _ in range(100):
+        excesso = float(np.clip(w - teto, 0.0, None).sum())
+        if excesso < 1e-12:
+            break
+        w = np.minimum(w, teto)
+        livres = w < teto - 1e-12
+        if not livres.any():
+            break
+        soma_livres = float(w[livres].sum())
+        if soma_livres <= 1e-12:
+            w[livres] += excesso / int(livres.sum())
+        else:
+            w[livres] += excesso * w[livres] / soma_livres
+    return w
+
+
+def calcular_caminho_enet(
+    treino_X: pd.DataFrame,
+    treino_y: pd.Series,
+    l1_ratio: float = L1_RATIO_PADRAO,
+    n_alphas: int = 100,
+    n_splits: int = 5,
+) -> Tuple[np.ndarray, np.ndarray, float]:
+    """Caminho de regularização do Elastic Net com coeficientes não negativos e o
+    alpha escolhido por validação cruzada temporal (minimiza o erro de rastreamento
+    fora da amostra). Não depende de K: pode ser calculado uma vez e reutilizado.
+    Retorna (alphas em ordem decrescente, coeficientes [n_ativos x n_alphas], alpha_cv)."""
+    X = treino_X.to_numpy(dtype=float) * 100.0
+    y = treino_y.to_numpy(dtype=float) * 100.0
+    n_obs = X.shape[0]
+    # Acima de alpha_max todos os coeficientes (>= 0) são nulos.
+    alpha_max = float(np.max(X.T @ y)) / (n_obs * l1_ratio)
+    if not np.isfinite(alpha_max) or alpha_max <= 0.0:
+        return np.array([1.0]), np.zeros((X.shape[1], 1)), 1.0
+    alphas = alpha_max * np.logspace(0.0, -4.0, n_alphas)
+    cv = ElasticNetCV(
+        l1_ratio=l1_ratio,
+        alphas=alphas,
+        positive=True,
+        fit_intercept=False,
+        cv=TimeSeriesSplit(n_splits=n_splits),
+        max_iter=5000,
+        tol=1e-6,
+    ).fit(X, y)
+    alphas_out, coefs, _ = enet_path(
+        X,
+        y,
+        l1_ratio=l1_ratio,
+        alphas=alphas,
+        positive=True,
+        max_iter=5000,
+        tol=1e-6,
+    )
+    return np.asarray(alphas_out), np.asarray(coefs), float(cv.alpha_)
+
+
+def resolver_enet_positivo(
+    treino_X: pd.DataFrame,
+    treino_y: pd.Series,
+    k: int = 15,
+    peso_max: float = 0.30,
+    l1_ratio: float = L1_RATIO_PADRAO,
+    caminho: Optional[Tuple[np.ndarray, np.ndarray, float]] = None,
+) -> pd.Series:
+    """Elastic Net com restrição de sinal (w >= 0) para replicar o índice.
+
+    1) Ranking: ajusta o Elastic Net positivo em todo o universo com o alpha
+       escolhido por validação cruzada temporal (se esse alpha deixar menos de K
+       ações com peso > 0, usa o primeiro alpha menor que deixe) e fica com as K
+       de maior coeficiente. A parte L2 divide o peso entre ações correlacionadas,
+       então não é necessário o filtro de colinearidade usado no SLSQP.
+    2) Reajuste: reestima o Elastic Net positivo só com as K ações escolhidas.
+    3) Orçamento: normaliza para soma 1 e impõe o teto de peso por ação."""
+    acoes = [str(c) for c in treino_X.columns]
+    k = int(max(1, min(k, len(acoes))))
+    if caminho is None:
+        caminho = calcular_caminho_enet(treino_X, treino_y, l1_ratio)
+    alphas, coefs, alpha_cv = caminho
+
+    n_ativos = (coefs > 1e-10).sum(axis=0)
+    elegiveis = np.where((alphas <= alpha_cv * (1.0 + 1e-9)) & (n_ativos >= k))[0]
+    pos = int(elegiveis[0]) if len(elegiveis) > 0 else len(alphas) - 1
+    alpha_sel = float(alphas[pos])
+    coef_rank = coefs[:, pos]
+
+    ordem = np.argsort(coef_rank)[::-1][:k]
+    sel = ordem[coef_rank[ordem] > 1e-10]
+    if len(sel) == 0:
+        # Caso degenerado (nenhuma ação entrou no caminho): top-K por correlação.
+        sel = np.argsort(treino_X.corrwith(treino_y).to_numpy(dtype=float))[::-1][:k]
+        coef_sel = np.ones(len(sel))
+    else:
+        modelo = ElasticNet(
+            alpha=alpha_sel,
+            l1_ratio=l1_ratio,
+            positive=True,
+            fit_intercept=False,
+            max_iter=10000,
+            tol=1e-6,
+        )
+        modelo.fit(
+            treino_X.to_numpy(dtype=float)[:, sel] * 100.0,
+            treino_y.to_numpy(dtype=float) * 100.0,
+        )
+        coef_sel = np.asarray(modelo.coef_, dtype=float)
+        if float(coef_sel.sum()) <= 1e-12:
+            coef_sel = coef_rank[sel]
+
+    n = len(sel)
+    ub = min(1.0, max(peso_max, 1.0 / n + 1e-3))
+    w = _aplicar_teto_pesos(coef_sel, ub)
+    w_s = pd.Series(w, index=[acoes[i] for i in sel])
+    w_s = w_s[w_s > 1e-5]
+    return w_s / float(w_s.sum())
+
+
 @st.cache_data(show_spinner=False)
 def rodar_walk_forward_completo(
     ret_acoes: pd.DataFrame,
@@ -775,6 +901,8 @@ def rodar_walk_forward_completo(
     lambda_vol: float = 0.25,
     lambda_turn: float = 1e-4,
     custo_bps: int = 10,
+    modelo: str = MODELO_SLSQP,
+    l1_ratio: float = L1_RATIO_PADRAO,
 ) -> Tuple[pd.DataFrame, pd.Series, pd.Series, pd.Series, pd.DataFrame]:
     inicio = pd.to_datetime('2025-01-01')
     pontos = pd.date_range(inicio, ret_acoes.index[-1], freq='3MS')
@@ -791,16 +919,21 @@ def rodar_walk_forward_completo(
         tr_x = ret_acoes.loc[t0 - pd.DateOffset(months=24) : t0 - pd.Timedelta(days=1)]
         tr_y = ret_idx.loc[tr_x.index]
 
-        w_novo = treinar_modelo_campeao(
-            tr_x,
-            tr_y,
-            setores_map,
-            k=k,
-            peso_max=peso_max,
-            lambda_vol=lambda_vol,
-            w_ant=w_ant,
-            lambda_turn=lambda_turn,
-        )
+        if modelo == MODELO_ENET:
+            w_novo = resolver_enet_positivo(
+                tr_x, tr_y, k=k, peso_max=peso_max, l1_ratio=l1_ratio
+            )
+        else:
+            w_novo = treinar_modelo_campeao(
+                tr_x,
+                tr_y,
+                setores_map,
+                k=k,
+                peso_max=peso_max,
+                lambda_vol=lambda_vol,
+                w_ant=w_ant,
+                lambda_turn=lambda_turn,
+            )
         if not w_ant.empty:
             uniao = w_novo.index.union(w_ant.index)
             diff_w = w_novo.reindex(uniao, fill_value=0.0) - w_ant.reindex(
@@ -868,7 +1001,7 @@ def rodar_walk_forward_completo(
                 'Carteiras OOS': len(turnovers) + 1,
             }
         ],
-        index=pd.Index([MODELO_CAMPEAO], name='Modelo'),
+        index=pd.Index([modelo], name='Modelo'),
     )
     df_janelas = pd.DataFrame.from_dict(janelas, orient='index')
     return df_wf, sl, w_ant, si, df_janelas
@@ -881,29 +1014,110 @@ def calcular_curva_k(
     setores_map: Dict[str, str],
     peso_max: float = 0.30,
     lambda_vol: float = 0.25,
+    modelo: str = MODELO_SLSQP,
+    l1_ratio: float = L1_RATIO_PADRAO,
 ) -> pd.DataFrame:
     tr_x = ret_acoes.loc[:DATA_CORTE_TREINO]
     tr_y = ret_idx.loc[:DATA_CORTE_TREINO]
     oos_x = ret_acoes.loc[DATA_CORTE_TREINO:].iloc[1:]
     oos_y = ret_idx.loc[oos_x.index]
 
-    # A seleção relaxada não depende de K: calcula uma vez e reaproveita no grid.
-    ranking = ranquear_candidatas(tr_x, tr_y, setores_map, peso_max, lambda_vol)
+    # A seleção (ranking do SLSQP ou caminho do Elastic Net) não depende de K:
+    # calcula uma vez e reaproveita no grid.
+    ranking: Optional[List[str]] = None
+    caminho: Optional[Tuple[np.ndarray, np.ndarray, float]] = None
+    if modelo == MODELO_ENET:
+        caminho = calcular_caminho_enet(tr_x, tr_y, l1_ratio)
+    else:
+        ranking = ranquear_candidatas(tr_x, tr_y, setores_map, peso_max, lambda_vol)
     linhas: List[Dict[str, float]] = []
     for k_i in KS_GRID:
-        w_i = treinar_modelo_campeao(
-            tr_x,
-            tr_y,
-            setores_map,
-            k=k_i,
-            peso_max=peso_max,
-            lambda_vol=lambda_vol,
-            ranking=ranking,
-        )
+        if modelo == MODELO_ENET:
+            w_i = resolver_enet_positivo(
+                tr_x,
+                tr_y,
+                k=k_i,
+                peso_max=peso_max,
+                l1_ratio=l1_ratio,
+                caminho=caminho,
+            )
+        else:
+            w_i = treinar_modelo_campeao(
+                tr_x,
+                tr_y,
+                setores_map,
+                k=k_i,
+                peso_max=peso_max,
+                lambda_vol=lambda_vol,
+                ranking=ranking,
+            )
         cols_i = [str(c) for c in w_i.index.tolist()]
         te_i = float((oos_x[cols_i] @ w_i - oos_y).std() * np.sqrt(252.0) * 100.0)
         linhas.append({'K': k_i, 'TE': round(te_i, 2)})
     return pd.DataFrame(linhas)
+
+
+def rodar_todos_modelos(
+    ret_acoes: pd.DataFrame,
+    ret_idx: pd.Series,
+    setores_map: Dict[str, str],
+    k: int,
+    peso_max: float,
+    lambda_vol: float,
+    l1_ratio: float,
+) -> Dict[str, Tuple[pd.DataFrame, pd.Series, pd.Series, pd.Series, pd.DataFrame]]:
+    """Walk-forward dos dois algoritmos. Cada um recebe só os parâmetros que o
+    afetam: mexer em λ_vol não reprocessa o Elastic Net, e mexer em ρ (mix L1/L2)
+    não reprocessa o SLSQP, porque o cache do Streamlit usa os argumentos como chave."""
+    return {
+        MODELO_SLSQP: rodar_walk_forward_completo(
+            ret_acoes,
+            ret_idx,
+            setores_map,
+            k=k,
+            peso_max=peso_max,
+            lambda_vol=lambda_vol,
+            modelo=MODELO_SLSQP,
+        ),
+        MODELO_ENET: rodar_walk_forward_completo(
+            ret_acoes,
+            ret_idx,
+            setores_map,
+            k=k,
+            peso_max=peso_max,
+            modelo=MODELO_ENET,
+            l1_ratio=l1_ratio,
+        ),
+    }
+
+
+def calcular_curvas_k_todos(
+    ret_acoes: pd.DataFrame,
+    ret_idx: pd.Series,
+    setores_map: Dict[str, str],
+    peso_max: float,
+    lambda_vol: float,
+    l1_ratio: float,
+) -> Dict[str, pd.DataFrame]:
+    """Curva TE × K dos dois algoritmos (mesma lógica de cache de rodar_todos_modelos)."""
+    return {
+        MODELO_SLSQP: calcular_curva_k(
+            ret_acoes,
+            ret_idx,
+            setores_map,
+            peso_max=peso_max,
+            lambda_vol=lambda_vol,
+            modelo=MODELO_SLSQP,
+        ),
+        MODELO_ENET: calcular_curva_k(
+            ret_acoes,
+            ret_idx,
+            setores_map,
+            peso_max=peso_max,
+            modelo=MODELO_ENET,
+            l1_ratio=l1_ratio,
+        ),
+    }
 
 
 # ==============================================================================
@@ -1069,27 +1283,31 @@ def configurar_grafico_padrao(
 # ==============================================================================
 # 5. SIDEBAR: SELETOR DE ÍNDICE E PARÂMETROS DA CARTEIRA
 # ==============================================================================
-@st.cache_resource(show_spinner='Pré-processando S&P 100 e IBOVESPA (K = 15)...')
+@st.cache_resource(
+    show_spinner='Pré-processando S&P 100 e IBOVESPA (SLSQP + Elastic Net, K = 15)...'
+)
 def preaquecer_cache() -> bool:
     """Roda uma única vez por servidor: deixa walk-forward e curva de K com os
     parâmetros padrão já calculados para os dois mercados. Só reprocessa quando
     o usuário muda algum parâmetro na barra lateral."""
     for mercado in ('S&P 100 (EUA)', 'IBOVESPA (Brasil)'):
         ret_a, ret_i, setores, _, _, _ = carregar_mercado_completo(mercado)
-        rodar_walk_forward_completo(
+        rodar_todos_modelos(
             ret_a,
             ret_i,
             setores,
-            k=K_PADRAO,
-            peso_max=PESO_MAX_PADRAO,
-            lambda_vol=LAMBDA_VOL_PADRAO,
+            K_PADRAO,
+            PESO_MAX_PADRAO,
+            LAMBDA_VOL_PADRAO,
+            L1_RATIO_PADRAO,
         )
-        calcular_curva_k(
+        calcular_curvas_k_todos(
             ret_a,
             ret_i,
             setores,
-            peso_max=PESO_MAX_PADRAO,
-            lambda_vol=LAMBDA_VOL_PADRAO,
+            PESO_MAX_PADRAO,
+            LAMBDA_VOL_PADRAO,
+            L1_RATIO_PADRAO,
         )
     return True
 
@@ -1101,6 +1319,14 @@ mercado_sel = st.sidebar.radio(
     'Selecione o Índice (Benchmark)',
     ['S&P 100 (EUA)', 'IBOVESPA (Brasil)'],
     index=0,
+)
+
+escolha_modelo = st.sidebar.radio(
+    'Carteira exibida nas abas 1 e 4',
+    [ESCOLHA_AUTO, MODELO_SLSQP, MODELO_ENET],
+    index=0,
+    help='As abas 2 e 3 sempre comparam os dois algoritmos. "Campeão" exibe '
+    'o de menor tracking error walk-forward.',
 )
 
 is_ibov = 'IBOV' in mercado_sel
@@ -1131,6 +1357,19 @@ lambda_vol_val = st.sidebar.slider(
     max_value=1.0,
     value=LAMBDA_VOL_PADRAO,
     step=0.05,
+    help='Parâmetro do SLSQP (não afeta o Elastic Net).',
+)
+l1_ratio_val = float(
+    st.sidebar.slider(
+        'Mix L1/L2 do Elastic Net (ρ)',
+        min_value=0.1,
+        max_value=1.0,
+        value=L1_RATIO_PADRAO,
+        step=0.1,
+        help='Parâmetro do Elastic Net positivo (não afeta o SLSQP). '
+        'ρ = 1 equivale ao Lasso positivo (mais esparso); ρ menor aumenta a '
+        'parte Ridge, que divide o peso entre ações correlacionadas.',
+    )
 )
 
 st.sidebar.markdown('---')
@@ -1151,26 +1390,39 @@ st.sidebar.info(
     data_ultima_cot,
 ) = carregar_mercado_completo(mercado_sel)
 
-with st.spinner('Reprocessando a carteira com os novos parâmetros...'):
-    df_wf, serie_wf_liq, pesos_atuais, idx_oos, df_janelas = (
-        rodar_walk_forward_completo(
-            ret_acoes_full,
-            ret_idx_full,
-            setores_map,
-            k=k_val,
-            peso_max=peso_max_val,
-            lambda_vol=lambda_vol_val,
-        )
-    )
-    df_curva_k = calcular_curva_k(
+with st.spinner('Reprocessando as carteiras com os novos parâmetros...'):
+    resultados = rodar_todos_modelos(
         ret_acoes_full,
         ret_idx_full,
         setores_map,
-        peso_max=peso_max_val,
-        lambda_vol=lambda_vol_val,
+        k_val,
+        peso_max_val,
+        lambda_vol_val,
+        l1_ratio_val,
+    )
+    curvas_k = calcular_curvas_k_todos(
+        ret_acoes_full,
+        ret_idx_full,
+        setores_map,
+        peso_max_val,
+        lambda_vol_val,
+        l1_ratio_val,
     )
 
-metricas = df_wf.loc[MODELO_CAMPEAO]
+df_wf_comp = pd.concat([resultados[m][0] for m in MODELOS])
+if escolha_modelo == ESCOLHA_AUTO:
+    modelo_sel = str(df_wf_comp['TE Walk-Forward (% a.a.)'].idxmin())
+else:
+    modelo_sel = escolha_modelo
+
+# Carteira exibida nas abas 1 e 4 (as abas 2 e 3 comparam os dois algoritmos)
+_, _, pesos_atuais, idx_oos, df_janelas = resultados[modelo_sel]
+CORES_MODELOS: Dict[str, str] = {
+    MODELO_SLSQP: cor_primaria,
+    MODELO_ENET: CORES['laranja'],
+}
+
+metricas = df_wf_comp.loc[modelo_sel]
 te_melhor = float(metricas['TE Walk-Forward (% a.a.)'])
 td_liquida = float(metricas['TD Líquida (c/ custos %)'])
 vol_cart_oos = float(metricas['Vol. Carteira (%)'])
@@ -1211,7 +1463,7 @@ kpi_html = (
     f'</div>'
     f'<div class="kpi-card" style="border-left-color: {cor_primaria};">'
     f'<div class="kpi-label">MODELO</div>'
-    f'<div class="kpi-value">{MODELO_CAMPEAO}</div>'
+    f'<div class="kpi-value">{modelo_sel}</div>'
     f'<span class="kpi-delta good">R² = {float(metricas["R²"]):.4f} | r = {float(metricas["Correlação (r)"]):.4f}</span>'
     f'</div>'
     f'<div class="kpi-card" style="border-left-color: {cor_primaria};">'
@@ -1262,7 +1514,7 @@ with tab1:
     w_atual = pesos_atuais.sort_values(ascending=False)
 
     st.markdown(
-        f'<div class="sec-title">>>>>> Composição da Carteira Recomendada ({len(w_atual)} Ações)</div>',
+        f'<div class="sec-title">>>>>> Composição da Carteira Recomendada: {modelo_sel} ({len(w_atual)} Ações)</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -1339,7 +1591,6 @@ with tab2:
     )
 
     idx_acum = np.exp(idx_oos.cumsum()) * 100.0
-    cart_acum = np.exp(serie_wf_liq.cumsum()) * 100.0
     fig_wf = go.Figure()
     fig_wf.add_hline(y=100, line_dash='dot', line_color='#A0AEC0', line_width=1.2)
     fig_wf.add_trace(
@@ -1351,15 +1602,18 @@ with tab2:
             line=dict(color=CORES['grafite'], width=3.3),
         )
     )
-    fig_wf.add_trace(
-        go.Scatter(
-            x=cart_acum.index,
-            y=cart_acum,
-            mode='lines',
-            name=f'{MODELO_CAMPEAO} (TE: {te_melhor:.2f}%)',
-            line=dict(color=cor_primaria, width=3.0),
+    for m_nome in MODELOS:
+        cart_acum_m = np.exp(resultados[m_nome][1].cumsum()) * 100.0
+        te_m = float(df_wf_comp.loc[m_nome, 'TE Walk-Forward (% a.a.)'])
+        fig_wf.add_trace(
+            go.Scatter(
+                x=cart_acum_m.index,
+                y=cart_acum_m,
+                mode='lines',
+                name=f'{m_nome} (TE: {te_m:.2f}%)',
+                line=dict(color=CORES_MODELOS[m_nome], width=3.0),
+            )
         )
-    )
 
     for dt_reb in pd.date_range('2025-04-01', idx_oos.index[-1], freq='3MS'):
         fig_wf.add_vline(x=dt_reb, line_dash='dot', line_color='#E2E8F0', line_width=1)
@@ -1377,13 +1631,16 @@ with tab2:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="sec-sub">Métricas do período fora da amostra completo</div>',
+        '<div class="sec-sub">Métricas do período fora da amostra completo para os dois algoritmos. '
+        'O <b>Elastic Net positivo</b> exige pesos ≥ 0 e escolhe o alpha por validação cruzada temporal; '
+        'ranqueia as ações pelos coeficientes, reajusta as K escolhidas e normaliza para soma 100% com o mesmo '
+        'teto por ação. Diferente do SLSQP, não tem penalização de giro nem ajuste de volatilidade.</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
         renderizar_tabela_html(
-            df_wf,
-            col_destaque='',
+            df_wf_comp,
+            col_destaque='TE Walk-Forward (% a.a.)',
             cor_header=cor_primaria,
             nome_indice_col='Modelo',
         ),
@@ -1395,7 +1652,7 @@ with tab2:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="sec-sub">Retorno líquido de custos de cada janela de rebalanceamento contra o índice</div>',
+        f'<div class="sec-sub">Retorno líquido de custos de cada janela de rebalanceamento contra o índice — carteira <b>{modelo_sel}</b></div>',
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -1422,22 +1679,23 @@ with tab3:
     )
 
     fig_k = go.Figure()
-    fig_k.add_trace(
-        go.Scatter(
-            x=df_curva_k['K'],
-            y=df_curva_k['TE'],
-            mode='lines+markers',
-            name=MODELO_CAMPEAO,
-            line=dict(color=cor_primaria, width=3.0),
-            marker=dict(size=8),
+    for m_nome in MODELOS:
+        fig_k.add_trace(
+            go.Scatter(
+                x=curvas_k[m_nome]['K'],
+                y=curvas_k[m_nome]['TE'],
+                mode='lines+markers',
+                name=m_nome,
+                line=dict(color=CORES_MODELOS[m_nome], width=3.0),
+                marker=dict(size=8),
+            )
         )
-    )
     fig_k.add_vline(
         x=k_val, line_dash='dash', line_color=CORES['alerta'], line_width=1.5
     )
     fig_k.add_annotation(
         x=k_val,
-        y=float(df_curva_k['TE'].max()) * 0.94,
+        y=max(float(c['TE'].max()) for c in curvas_k.values()) * 0.94,
         text=f'K selecionado = {k_val} ações',
         showarrow=False,
         xanchor='left',
